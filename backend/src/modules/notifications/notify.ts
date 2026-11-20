@@ -5,6 +5,7 @@ import { emitToUser } from '../../lib/socket';
 import type { Id } from '../../lib/types';
 import { EmailTemplateModel, NotificationModel } from './notification.models';
 import { DEFAULT_TEMPLATES, renderTemplate, type TemplateKey } from './templates';
+import { brand } from '../../lib/brand';
 
 const escape = (s: string) =>
   s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
@@ -14,10 +15,6 @@ export async function templateFor(institutionId: Id | null | undefined, key: Tem
   return custom ?? DEFAULT_TEMPLATES[key]!;
 }
 
-/**
- * Stores a notification, pushes it live (NOTIF-1) and optionally sends the institution's
- * e-mail template (NOTIF-2, NOTIF-3). Failures never break the calling operation.
- */
 export async function notify(
   userId: Id,
   n: { type: string; title: string; body: string; link?: string },
@@ -40,7 +37,9 @@ export async function notify(
         paragraphs: renderTemplate(t.body, mail.vars)
           .split(/\n{2,}/)
           .map((p) => escape(p).replace(/\n/g, '<br>')),
-        action: n.link ? { label: 'Open ADMITRA', url: `${env.WEB_URL}${n.link}` } : undefined,
+        action: n.link
+          ? { label: `Open ${brand().platformName}`, url: `${env.WEB_URL}${n.link}` }
+          : undefined,
       });
     }
   } catch (err) {

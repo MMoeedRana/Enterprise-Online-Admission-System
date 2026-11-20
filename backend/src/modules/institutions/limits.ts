@@ -4,6 +4,7 @@ import { ProgramModel } from '../programs/program.model';
 import { MemberModel } from '../staff/member.model';
 import { CampusModel } from '../structure/structure.models';
 import type { Id } from '../../lib/types';
+import { brand } from '../../lib/brand';
 
 export type LimitKey = 'campuses' | 'programs' | 'staff';
 
@@ -28,7 +29,6 @@ const LABELS: Record<LimitKey, string> = {
   staff: 'staff members',
 };
 
-/** INST-3: refuses a new record when the plan limit is reached. */
 export async function assertWithinLimit(institution: { _id: unknown; planId?: unknown }, key: LimitKey) {
   const plan = await planOf(institution);
   const usage = await usageOf(institution._id as Id);
@@ -38,7 +38,7 @@ export async function assertWithinLimit(institution: { _id: unknown; planId?: un
     throw new ApiError(
       403,
       'PLAN_LIMIT_REACHED',
-      `Your ${plan.name} plan allows ${limit} ${LABELS[key]}. Please contact ADMITRA to upgrade the plan.`,
+      `Your ${plan.name} plan allows ${limit} ${LABELS[key]}. Please contact ${brand().platformName} to upgrade the plan.`,
       { limit, used: usage[key], key },
     );
   }

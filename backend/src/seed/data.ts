@@ -1,7 +1,3 @@
-/**
- * Sample data for development and demonstration only.
- * Institution names match the reference UI designs; they are not real institutions.
- */
 export const SAMPLE_PASSWORD = 'Admitra@123';
 
 export const plans = [
@@ -12,7 +8,14 @@ export const plans = [
     priceMonthly: 15000,
     trialDays: 30,
     limits: { campuses: 1, programs: 20, staff: 10, applicationsPerCycle: 2000 },
-    features: { multipleCampuses: false, customBranding: false, advancedAnalytics: false, apiAccess: false },
+    features: {
+      multipleCampuses: false,
+      customBranding: false,
+      advancedAnalytics: false,
+      apiAccess: false,
+      aiCopilot: false,
+      aiBriefing: false,
+    },
   },
   {
     code: 'STANDARD',
@@ -21,7 +24,14 @@ export const plans = [
     priceMonthly: 35000,
     trialDays: 30,
     limits: { campuses: 3, programs: 80, staff: 40, applicationsPerCycle: 10000 },
-    features: { multipleCampuses: true, customBranding: true, advancedAnalytics: true, apiAccess: false },
+    features: {
+      multipleCampuses: true,
+      customBranding: true,
+      advancedAnalytics: true,
+      apiAccess: false,
+      aiCopilot: false,
+      aiBriefing: true,
+    },
   },
   {
     code: 'ENTERPRISE',
@@ -30,7 +40,14 @@ export const plans = [
     priceMonthly: 75000,
     trialDays: 45,
     limits: { campuses: 10, programs: 400, staff: 250, applicationsPerCycle: 60000 },
-    features: { multipleCampuses: true, customBranding: true, advancedAnalytics: true, apiAccess: true },
+    features: {
+      multipleCampuses: true,
+      customBranding: true,
+      advancedAnalytics: true,
+      apiAccess: true,
+      aiCopilot: true,
+      aiBriefing: true,
+    },
   },
 ] as const;
 
@@ -230,7 +247,7 @@ export const institutions: InstitutionSeed[] = [
     province: 'Punjab',
     website: 'https://rit.example.edu.pk',
     about: 'Sample private institute of technology used for the ADMITRA demonstration.',
-    plan: 'STANDARD',
+    plan: 'ENTERPRISE',
     admin: { name: 'Hassan Raza', email: 'admin@rit.example.edu.pk' },
     staff: [
       {

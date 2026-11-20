@@ -32,12 +32,11 @@ import type { AdvisorMeta, AdvisorResult, DirProgram, HistoryRow } from './types
 type Explained = AdvisorResult & { program: DirProgram; allHistory: HistoryRow[] };
 
 const ORIGIN: Record<string, string> = {
-  ADMITRA: 'Official (ADMITRA)',
+  ADMITRA: 'Official',
   IMPORT: 'Published merit list',
   MANUAL: 'Entered from source',
 };
 
-/** PRED-8 (Figure 4.3): how a chance is calculated, with a what-if slider for the entry test. */
 export function ExplainPage({ id, base = '' }: { id: string; base?: string }) {
   const sp = useSearchParams();
   const router = useRouter();
@@ -302,7 +301,7 @@ export function ExplainPage({ id, base = '' }: { id: string; base?: string }) {
                       type="monotone"
                       dataKey="closing"
                       name="Closing merit"
-                      stroke="#1F6FEB"
+                      stroke="var(--primary)"
                       strokeWidth={2.5}
                       dot={{ r: 4 }}
                     />

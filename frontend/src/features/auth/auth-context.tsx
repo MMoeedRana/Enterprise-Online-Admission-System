@@ -18,21 +18,19 @@ interface AuthState {
   login: (email: string, password: string) => Promise<Session>;
   logout: () => Promise<void>;
   updateUser: (u: User) => void;
+  reloadMe: () => Promise<void>;
   can: (permission: string) => boolean;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
 const STORAGE_KEY = 'admitra.institution';
-/** Set while this browser has a session, so visitors are not sent to the refresh endpoint. */
 const SIGNED_IN_KEY = 'admitra.signedIn';
 
 function setSignedIn(on: boolean) {
   try {
     if (on) localStorage.setItem(SIGNED_IN_KEY, '1');
     else localStorage.removeItem(SIGNED_IN_KEY);
-  } catch {
-    /* storage unavailable */
-  }
+  } catch {}
 }
 
 function wasSignedIn() {
@@ -51,7 +49,6 @@ function readStoredInstitution() {
   }
 }
 
-/** Where each user lands after signing in (AUTH-6). */
 export function homeFor(user: User, memberships: Membership[]): string {
   if (user.platformRole === 'SUPER_ADMIN') return '/platform/dashboard';
   if (user.accountType === 'APPLICANT') return '/applicant/dashboard';
@@ -102,9 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setInstitutionHeader(id);
       try {
         localStorage.setItem(STORAGE_KEY, id);
-      } catch {
-        /* storage unavailable */
-      }
+      } catch {}
       queryClient.removeQueries({ predicate: (q) => q.queryKey[0] === 'inst' });
     },
     [queryClient],
@@ -126,6 +121,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.replace('/login');
   }, [applySession, queryClient, router]);
 
+  const reloadMe = useCallback(async () => {
+    const r = await api.get<{ data: { user: User; memberships: Membership[] } }>('/auth/me');
+    setUser(r.data.data.user);
+    setMemberships(r.data.data.memberships);
+  }, []);
+
   const current = memberships.find((m) => m.institutionId === currentId) ?? null;
 
   const value = useMemo<AuthState>(
@@ -139,9 +140,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       logout,
       updateUser: setUser,
+      reloadMe,
       can: (p) => Boolean(current?.permissions.includes(p)),
     }),
-    [status, user, memberships, current, selectInstitution, applySession, login, logout],
+    [status, user, memberships, current, selectInstitution, applySession, login, logout, reloadMe],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

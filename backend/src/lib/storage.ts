@@ -1,9 +1,9 @@
 import crypto from 'node:crypto';
-import fs from 'node:fs';
 import path from 'node:path';
 import type { Response } from 'express';
 import multer from 'multer';
 import { env } from '../config/env';
+import { fileStore } from './file-store';
 import { FileModel, type FILE_PURPOSES } from '../modules/files/file.model';
 import { MIME_BY_FORMAT, type DOCUMENT_FORMATS } from '../constants/applications';
 import { ApiError } from './http';
@@ -11,7 +11,6 @@ import type { Id } from './types';
 
 export const STORAGE_ROOT = path.resolve(env.STORAGE_DIR);
 
-/** Uploads are kept in memory first so their content can be checked before saving (DOC-2). */
 export const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024, files: 1 },
@@ -20,7 +19,6 @@ export const upload = multer({
 type Format = (typeof DOCUMENT_FORMATS)[number];
 const EXT: Record<string, string> = { 'application/pdf': 'pdf', 'image/jpeg': 'jpg', 'image/png': 'png' };
 
-/** Detects the real type from the file content (magic bytes), never from the file name. */
 export async function detectMime(buffer: Buffer): Promise<string | null> {
   const { fileTypeFromBuffer } = await import('file-type');
   const t = await fileTypeFromBuffer(buffer);
@@ -50,10 +48,9 @@ export async function saveUpload(
     });
   }
   const now = new Date();
-  const dir = path.join(String(now.getFullYear()), String(now.getMonth() + 1).padStart(2, '0'));
-  const storageKey = path.join(dir, `${crypto.randomUUID()}.${EXT[mime]}`);
-  await fs.promises.mkdir(path.join(STORAGE_ROOT, dir), { recursive: true });
-  await fs.promises.writeFile(path.join(STORAGE_ROOT, storageKey), file.buffer);
+  const dir = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const storageKey = `${dir}/${crypto.randomUUID()}.${EXT[mime]}`;
+  await fileStore().put(storageKey, file.buffer, mime);
   const sha256 = crypto.createHash('sha256').update(file.buffer).digest('hex');
   return FileModel.create({
     ownerId: opts.ownerId,
@@ -66,13 +63,12 @@ export async function saveUpload(
   });
 }
 
-/** Streams a stored file to an authorised user (DOC-3). */
-export function streamFile(
+export async function streamFile(
   res: Response,
   f: { storageKey: string; mimeType: string; originalName?: string | null },
 ) {
-  const full = path.join(STORAGE_ROOT, f.storageKey);
-  if (!full.startsWith(STORAGE_ROOT) || !fs.existsSync(full)) throw ApiError.notFound('File');
+  const body = await fileStore().get(f.storageKey);
+  if (!body) throw ApiError.notFound('File');
   res.setHeader('Content-Type', f.mimeType);
   res.setHeader(
     'Content-Disposition',
@@ -80,5 +76,5 @@ export function streamFile(
   );
   res.setHeader('Cache-Control', 'private, no-store');
   res.setHeader('X-Content-Type-Options', 'nosniff');
-  fs.createReadStream(full).pipe(res);
+  body.pipe(res);
 }

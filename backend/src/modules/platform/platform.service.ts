@@ -1,3 +1,4 @@
+import { SubscriptionPaymentModel } from './billing.model';
 import type { Request } from 'express';
 import { env } from '../../config/env';
 import { audit } from '../../lib/audit';
@@ -11,6 +12,7 @@ import { MemberModel } from '../staff/member.model';
 import { UserModel } from '../users/user.model';
 import { ensureDefaultDocumentTypes } from '../documents/document.models';
 import type { Id } from '../../lib/types';
+import { brand } from '../../lib/brand';
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -21,7 +23,6 @@ export async function uniqueSlug(name: string): Promise<string> {
   return slug;
 }
 
-/** Invites a person as staff of an institution and e-mails the single-use link (AUTH-5, AUTH-7). */
 export async function inviteMember(
   req: Request,
   institution: { _id: Id; name: string },
@@ -63,10 +64,10 @@ export async function sendInvitation(
   const raw = await createActionToken('INVITATION', { memberId: member._id, email: member.email });
   await sendMail({
     to: member.email,
-    subject: `You are invited to ${institutionName} on ADMITRA`,
+    subject: `You are invited to ${institutionName} on ${brand().platformName}`,
     heading: 'Staff invitation',
     paragraphs: [
-      `Hello${member.fullName ? ' ' + member.fullName : ''}, you have been invited to join <b>${institutionName}</b> on ADMITRA.`,
+      `Hello${member.fullName ? ' ' + member.fullName : ''}, you have been invited to join <b>${institutionName}</b> on ${brand().platformName}.`,
       'Open the link to set your password and join the workspace. The invitation can be used once and is valid for 7 days.',
     ],
     action: { label: 'Accept invitation', url: `${env.WEB_URL}/accept-invitation?token=${raw}` },
@@ -118,7 +119,7 @@ export async function rejectInstitution(req: Request, id: string, reason: string
   await inst.save();
   await sendMail({
     to: inst.contact!.email,
-    subject: 'Your ADMITRA onboarding request',
+    subject: `Your ${brand().platformName} onboarding request`,
     heading: 'Onboarding request not approved',
     paragraphs: [
       `Dear ${inst.contact!.name}, the request for <b>${inst.name}</b> was not approved.`,
@@ -150,7 +151,17 @@ export async function setSuspended(req: Request, id: string, suspend: boolean, r
   return inst;
 }
 
-export async function renewSubscription(req: Request, id: string, months: number, planId?: string) {
+export async function renewSubscription(
+  req: Request,
+  id: string,
+  months: number,
+  planId?: string,
+  payment: {
+    amount?: number;
+    method?: 'BANK_TRANSFER' | 'CHEQUE' | 'CASH' | 'ONLINE';
+    reference?: string;
+  } = {},
+) {
   const inst = await InstitutionModel.findById(id);
   if (!inst) throw ApiError.notFound('Institution');
   if (!['ACTIVE', 'SUSPENDED'].includes(inst.status))
@@ -167,6 +178,21 @@ export async function renewSubscription(req: Request, id: string, months: number
   endsAt.setMonth(endsAt.getMonth() + months);
   inst.subscription = { startsAt: inst.subscription?.startsAt ?? now, endsAt, isTrial: false };
   await inst.save();
+  const plan = await PlanModel.findById(inst.planId).lean();
+  if (plan)
+    await SubscriptionPaymentModel.create({
+      institutionId: inst._id,
+      planId: plan._id,
+      planName: plan.name,
+      months,
+      amount: payment.amount ?? plan.priceMonthly * months,
+      method: payment.method ?? 'BANK_TRANSFER',
+      reference: payment.reference ?? '',
+      periodStart: from,
+      periodEnd: endsAt,
+      recordedBy: req.auth?.userId ?? null,
+      recordedByName: req.auth?.name ?? '',
+    });
   await audit(
     req,
     'SUBSCRIPTION_RENEWED',

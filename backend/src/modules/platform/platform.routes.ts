@@ -19,7 +19,6 @@ import * as svc from './platform.service';
 export const platformRouter = Router();
 platformRouter.use(authenticate, requireSuperAdmin);
 
-// ---------------- Dashboard ----------------
 platformRouter.get('/dashboard', async (_req, res) => {
   const [byStatus, applicants, staff, programs, openCampaigns, pending, recent, plans] = await Promise.all([
     InstitutionModel.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]),
@@ -68,7 +67,6 @@ platformRouter.get('/dashboard', async (_req, res) => {
   });
 });
 
-// ---------------- Plans ----------------
 const planBody = z.object({
   code: z
     .string()
@@ -91,6 +89,8 @@ const planBody = z.object({
     customBranding: z.boolean().default(false),
     advancedAnalytics: z.boolean().default(false),
     apiAccess: z.boolean().default(false),
+    aiCopilot: z.boolean().default(false),
+    aiBriefing: z.boolean().default(false),
   }),
   status: z.enum(['ACTIVE', 'RETIRED']).default('ACTIVE'),
 });
@@ -126,7 +126,6 @@ platformRouter.patch('/plans/:id', async (req, res) => {
   ok(res, plan);
 });
 
-// ---------------- Institutions ----------------
 platformRouter.get('/institutions', async (req, res) => {
   const q = parse(paginationQuery.extend({ status: z.enum(INSTITUTION_STATUSES).optional() }), req.query);
   const filter: Record<string, unknown> = {};
@@ -188,7 +187,6 @@ const createInstitutionBody = z.object({
   trialDays: z.coerce.number().int().min(0).max(365).optional(),
 });
 
-/** INST-1: the super admin can also create an institution directly. */
 platformRouter.post('/institutions', async (req, res) => {
   const body = parse(createInstitutionBody, req.body);
   const inst = await InstitutionModel.create({
@@ -244,10 +242,16 @@ platformRouter.post('/institutions/:id/reactivate', async (req, res) => {
 platformRouter.post('/institutions/:id/renew', async (req, res) => {
   const { id } = parse(idParams, req.params);
   const body = parse(
-    z.object({ months: z.coerce.number().int().min(1).max(36), planId: objectId.optional() }),
+    z.object({
+      months: z.coerce.number().int().min(1).max(36),
+      planId: objectId.optional(),
+      amount: z.coerce.number().min(0).max(100_000_000).optional(),
+      method: z.enum(['BANK_TRANSFER', 'CHEQUE', 'CASH', 'ONLINE']).optional(),
+      reference: z.string().trim().max(60).optional(),
+    }),
     req.body,
   );
-  ok(res, await svc.renewSubscription(req, id, body.months, body.planId));
+  ok(res, await svc.renewSubscription(req, id, body.months, body.planId, body));
 });
 
 platformRouter.post('/institutions/:id/resend-admin-invite', async (req, res) => {
@@ -263,5 +267,3 @@ platformRouter.post('/institutions/:id/resend-admin-invite', async (req, res) =>
   await svc.sendInvitation(member, inst.name);
   ok(res, { sent: true });
 });
-
-// The audit log lives in modules/audit/audit.routes.ts (mounted at /platform/audit-logs).

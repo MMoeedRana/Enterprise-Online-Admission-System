@@ -33,7 +33,9 @@ const institutionSchema = new Schema(
     },
     branding: {
       logoUrl: { type: String, default: '' },
-      primaryColor: { type: String, default: '#1F6FEB' },
+      logoKey: { type: String, default: '' },
+      primaryColor: { type: String, default: '' },
+      sidebarColor: { type: String, default: '' },
     },
     bankAccount: {
       bankName: { type: String, default: '' },
@@ -43,7 +45,6 @@ const institutionSchema = new Schema(
     },
     settings: {
       eligibilityAsSeparateStep: { type: Boolean, default: true },
-      /** MARK-12: enrollment completes only after the originals are checked on the reporting day. */
       requireOriginals: { type: Boolean, default: false },
     },
     approvedAt: Date,
@@ -57,7 +58,6 @@ export const InstitutionModel = model('Institution', institutionSchema);
 
 export type SubscriptionState = 'ACTIVE' | 'GRACE' | 'READ_ONLY' | 'NONE';
 
-/** INST-4: after the end date the workspace has 7 days of grace, then becomes read-only. */
 export function subscriptionState(
   inst: { subscription?: { endsAt?: Date | null } | null },
   now = new Date(),

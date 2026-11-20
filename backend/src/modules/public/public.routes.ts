@@ -14,13 +14,13 @@ import { uniqueSlug } from '../platform/platform.service';
 import { ProgramModel, totalSeats } from '../programs/program.model';
 import { CampusModel, DepartmentModel } from '../structure/structure.models';
 import { UserModel } from '../users/user.model';
+import { brand } from '../../lib/brand';
 
 export const publicRouter = Router();
 publicRouter.use(publicLimiter);
 
 const INST_PUBLIC = 'name shortName slug type sector city province website branding about';
 
-/** Open campaigns (CAMP-3) of active institutions, keyed by program id. */
 async function openCampaignsByProgram(programIds?: unknown[]) {
   const filter: Record<string, unknown> = { status: 'OPEN', closesAt: { $gt: new Date() } };
   if (programIds) filter['programs.programId'] = { $in: programIds };
@@ -123,7 +123,6 @@ publicRouter.get('/filters', async (_req, res) => {
   });
 });
 
-/** Rows for the "Open admission campaigns" table on the home page. */
 publicRouter.get('/open-admissions', async (req, res) => {
   const { limit } = parse(z.object({ limit: z.coerce.number().int().min(1).max(50).default(8) }), req.query);
   const insts = await InstitutionModel.find({ status: 'ACTIVE' }).select(INST_PUBLIC).lean();
@@ -328,7 +327,6 @@ publicRouter.get('/institutions/:slug', async (req, res) => {
   });
 });
 
-/** INST-1: an institution requests a workspace from the public website. */
 publicRouter.post('/onboarding-requests', async (req, res) => {
   const body = parse(
     z.object({
@@ -391,14 +389,14 @@ publicRouter.post('/onboarding-requests', async (req, res) => {
         subject: `New onboarding request: ${inst.name}`,
         heading: 'New institution onboarding request',
         paragraphs: [
-          `<b>${inst.name}</b> (${inst.city}) has requested an ADMITRA workspace. Contact: ${body.contact.name}, ${body.contact.email}.`,
+          `<b>${inst.name}</b> (${inst.city}) has requested a ${brand().platformName} workspace. Contact: ${body.contact.name}, ${body.contact.email}.`,
         ],
       }),
     ),
   );
   await sendMail({
     to: body.contact.email,
-    subject: 'We received your ADMITRA onboarding request',
+    subject: `We received your ${brand().platformName} onboarding request`,
     heading: 'Thank you for your request',
     paragraphs: [
       `Dear ${body.contact.name}, we received the request for <b>${inst.name}</b>. Our team will review it and contact you soon.`,

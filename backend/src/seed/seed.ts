@@ -1,9 +1,3 @@
-/**
- * Protected seed command (AUTH-7).
- *   npm run seed                    -> creates the first Super Admin (from .env) and the plans
- *   npm run seed -- --sample        -> also adds the sample institutions used for the demonstration
- *   npm run seed -- --reset --sample-> clears the database first (development only)
- */
 import mongoose from 'mongoose';
 import { env, isProd } from '../config/env';
 import { hashPassword } from '../lib/crypto';
@@ -26,6 +20,7 @@ import { SAMPLE_PASSWORD, institutions, pendingRequests, plans, sampleApplicant 
 import { seedDemo } from './demo';
 import { seedPhase3 } from './phase3';
 import { seedPhase4 } from './phase4';
+import { seedPhase5 } from './phase5';
 
 const args = new Set(process.argv.slice(2));
 const DAY = 24 * 60 * 60 * 1000;
@@ -233,6 +228,7 @@ async function seedSample() {
     await seedDemo();
     await seedPhase3(passwordHash);
     await seedPhase4();
+    await seedPhase5();
   }
   log(`All sample accounts use the password: ${SAMPLE_PASSWORD}`);
 }

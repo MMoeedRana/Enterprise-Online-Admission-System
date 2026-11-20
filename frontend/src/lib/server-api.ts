@@ -11,7 +11,6 @@ export class ServerApiError extends Error {
   }
 }
 
-/** Fetch used by Server Components for public pages. Returns { data, meta }. */
 export async function serverGet<T>(path: string, params?: Record<string, string | undefined>) {
   const qs = new URLSearchParams();
   for (const [k, v] of Object.entries(params ?? {})) if (v) qs.set(k, v);
@@ -20,7 +19,7 @@ export async function serverGet<T>(path: string, params?: Record<string, string 
   try {
     res = await fetch(url, { cache: 'no-store' });
   } catch {
-    throw new ServerApiError(503, 'The ADMITRA service is not reachable right now.');
+    throw new ServerApiError(503, 'The admission service is not reachable right now.');
   }
   const body = await res.json().catch(() => ({}));
   if (!res.ok) throw new ServerApiError(res.status, body?.error?.message ?? 'Request failed');

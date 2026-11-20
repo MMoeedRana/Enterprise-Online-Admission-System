@@ -30,6 +30,7 @@ import { formatDate, formatMoney } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { BANDS, BandBadge, ChanceRing } from './band';
 import { INTER_GROUPS, type AdvisorInputs, type AdvisorMeta, type AdvisorResult, type Band } from './types';
+import { useBrand } from '@/features/branding/brand-context';
 
 const ORDER: Band[] = ['SAFE', 'TARGET', 'REACH', 'UNLIKELY', 'INSUFFICIENT_DATA', 'NOT_ELIGIBLE'];
 const SORTS = {
@@ -72,7 +73,6 @@ function bodyOf(v: AdvisorInputs) {
   };
 }
 
-// The comparison selection is a per-viewer convenience kept in this browser only.
 const compareListeners = new Set<() => void>();
 function readCompare(): string {
   try {
@@ -102,9 +102,7 @@ export function useCompare() {
   const save = (next: string[]) => {
     try {
       localStorage.setItem(COMPARE_KEY, JSON.stringify(next));
-    } catch {
-      /* storage unavailable */
-    }
+    } catch {}
     compareListeners.forEach((l) => l());
   };
   const toggle = (id: string) => {
@@ -115,7 +113,6 @@ export function useCompare() {
   return { ids, toggle, clear: () => save([]) };
 }
 
-/** PRED-10: programs saved by a signed-in applicant. */
 export function useShortlist() {
   const { user } = useAuth();
   const qc = useQueryClient();
@@ -147,7 +144,6 @@ export function AdvisorPage({ base = '' }: { base?: string }) {
   const router = useRouter();
   const isApplicant = user?.accountType === 'APPLICANT';
   const [form, setV] = useState<AdvisorInputs>({ ...EMPTY, useSaved: false });
-  // Signed-in applicants start with their saved marks until they untick the option (PRED-2).
   const [savedChoice, setSavedChoice] = useState<boolean | null>(null);
   const v = useMemo(() => ({ ...form, useSaved: savedChoice ?? isApplicant }), [form, savedChoice, isApplicant]);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -173,7 +169,6 @@ export function AdvisorPage({ base = '' }: { base?: string }) {
     },
   });
 
-  // PRED-10 what-if: once results are shown, changes are recalculated straight away.
   useEffect(() => {
     if (!ran.current) return;
     const t = setTimeout(() => run.mutate(v), 450);
@@ -505,6 +500,7 @@ function ResultCard({
   saved: boolean;
   onSave: () => void;
 }) {
+  const brand = useBrand();
   return (
     <Card className="group flex h-full flex-col p-5 transition-shadow hover:shadow-lg">
       <div className="flex items-start gap-4">
@@ -554,7 +550,7 @@ function ResultCard({
       <div className="text-muted mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[12.5px]">
         <span>{formatMoney(r.feePerSemester)} / semester</span>
         <span>{r.history.length ? `Data ${r.history.map((h) => h.year).join(', ')}` : 'No verified data'}</span>
-        {r.institution.onAdmitra && <span className="text-primary font-semibold">On ADMITRA</span>}
+        {r.institution.onAdmitra && <span className="text-primary font-semibold">On {brand.platformName}</span>}
       </div>
       {!r.eligible && <p className="mt-2 text-[12.5px] font-medium text-red-700 dark:text-red-400">{r.reasons[0]}</p>}
       {r.openCampaign && (

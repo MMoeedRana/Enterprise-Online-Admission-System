@@ -8,6 +8,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
 import { useAuth } from '@/features/auth/auth-context';
 import { cn } from '@/lib/utils';
+import { useBrand } from '@/features/branding/brand-context';
 import { LogoMark } from './logo';
 import { NotificationBell } from './notification-bell';
 import { ThemeToggle } from './theme-toggle';
@@ -17,8 +18,8 @@ export interface NavItem {
   href: string;
   label: string;
   icon: LucideIcon;
-  /** Shown when the member has the permission (or any of them). */
   permission?: string | string[];
+  when?: 'ai';
 }
 export interface NavSection {
   title: string;
@@ -32,6 +33,8 @@ interface Props {
   search?: { placeholder: string; href: (q: string) => string };
   headerExtra?: ReactNode;
   banner?: ReactNode;
+  brandMark?: { logoUrl: string; name: string };
+  assistant?: ReactNode;
   children: ReactNode;
 }
 
@@ -40,14 +43,18 @@ function Sidebar({
   roleLabel,
   orgName,
   onNavigate,
-}: Pick<Props, 'sections' | 'roleLabel' | 'orgName'> & { onNavigate?: () => void }) {
+  brandMark,
+}: Pick<Props, 'sections' | 'roleLabel' | 'orgName' | 'brandMark'> & { onNavigate?: () => void }) {
   const pathname = usePathname();
-  const { user, can } = useAuth();
+  const { user, can, current } = useAuth();
+  const brand = useBrand();
   return (
     <div className="bg-navy flex h-full flex-col text-slate-300">
-      <div className="flex h-[76px] items-center gap-3 px-6">
-        <LogoMark />
-        <span className="text-[20px] font-extrabold tracking-tight text-white">ADMITRA</span>
+      <div className="flex h-[76px] min-w-0 items-center gap-3 px-6">
+        <LogoMark src={brandMark?.logoUrl || undefined} name={brandMark?.name} />
+        <span className="truncate text-[20px] font-extrabold tracking-tight text-white">
+          {brandMark?.name ?? brand.platformName}
+        </span>
       </div>
       <nav className="flex-1 overflow-y-auto px-4 pb-4" aria-label="Workspace">
         {sections.map((s, i) => (
@@ -57,6 +64,7 @@ function Sidebar({
             </p>
             <ul className="space-y-1">
               {s.items
+                .filter((it) => it.when !== 'ai' || Boolean(current?.ai?.copilot || current?.ai?.briefing))
                 .filter(
                   (it) =>
                     !it.permission ||
@@ -72,12 +80,12 @@ function Sidebar({
                         className={cn(
                           'flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-[14.5px] font-medium transition',
                           active
-                            ? 'bg-primary text-white shadow-[0_6px_18px_rgba(31,111,235,0.35)]'
+                            ? 'bg-primary text-white shadow-[0_6px_18px_var(--ring)]'
                             : 'hover:bg-white/5 hover:text-white',
                         )}
                       >
                         <it.icon className="size-[19px]" strokeWidth={1.8} />
-                        {it.label}
+                        {it.label.replace('{agent}', brand.agentName)}
                       </Link>
                     </li>
                   );
@@ -88,7 +96,7 @@ function Sidebar({
       </nav>
       {user && (
         <div className="bg-navy-line/70 m-4 flex items-center gap-3 rounded-2xl p-3.5">
-          <Avatar name={user.fullName} />
+          <Avatar name={user.fullName} src={user.avatarUrl} />
           <div className="min-w-0">
             <p className="truncate text-[14px] font-semibold text-white">{user.fullName}</p>
             <p className="truncate text-[12.5px] text-slate-400">{orgName}</p>
@@ -99,8 +107,17 @@ function Sidebar({
   );
 }
 
-/** Staff and super admin layout: navy sidebar, header with search, theme, notifications and account (Section 4.1.7). */
-export function StaffShell({ sections, roleLabel, orgName, search, headerExtra, banner, children }: Props) {
+export function StaffShell({
+  sections,
+  roleLabel,
+  orgName,
+  search,
+  headerExtra,
+  banner,
+  brandMark,
+  assistant,
+  children,
+}: Props) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState('');
   const router = useRouter();
@@ -108,7 +125,7 @@ export function StaffShell({ sections, roleLabel, orgName, search, headerExtra, 
   return (
     <div className="bg-page min-h-dvh">
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-[240px] lg:block xl:w-[260px]">
-        <Sidebar sections={sections} roleLabel={roleLabel} orgName={orgName} />
+        <Sidebar sections={sections} roleLabel={roleLabel} orgName={orgName} brandMark={brandMark} />
       </aside>
 
       {open && (
@@ -122,7 +139,13 @@ export function StaffShell({ sections, roleLabel, orgName, search, headerExtra, 
             >
               <X className="size-5" />
             </button>
-            <Sidebar sections={sections} roleLabel={roleLabel} orgName={orgName} onNavigate={() => setOpen(false)} />
+            <Sidebar
+              sections={sections}
+              roleLabel={roleLabel}
+              orgName={orgName}
+              brandMark={brandMark}
+              onNavigate={() => setOpen(false)}
+            />
           </aside>
         </div>
       )}
@@ -168,6 +191,7 @@ export function StaffShell({ sections, roleLabel, orgName, search, headerExtra, 
           <PageFade>{children}</PageFade>
         </main>
       </div>
+      {assistant}
     </div>
   );
 }

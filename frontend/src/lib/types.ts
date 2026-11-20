@@ -8,6 +8,7 @@ export interface User {
   platformRole: 'SUPER_ADMIN' | null;
   emailVerified: boolean;
   theme: 'light' | 'dark' | 'system';
+  avatarUrl?: string;
 }
 
 export interface Membership {
@@ -18,6 +19,8 @@ export interface Membership {
   city: string;
   status: string;
   logoUrl: string;
+  ai?: { copilot: boolean; briefing: boolean };
+  branding?: { active: boolean; logoUrl: string; primaryColor: string; sidebarColor: string };
   roles: StaffRole[];
   permissions: string[];
 }
@@ -48,7 +51,14 @@ export interface Plan {
   priceMonthly: number;
   trialDays: number;
   limits: { campuses: number; programs: number; staff: number; applicationsPerCycle: number };
-  features: { multipleCampuses: boolean; customBranding: boolean; advancedAnalytics: boolean; apiAccess: boolean };
+  features: {
+    multipleCampuses: boolean;
+    customBranding: boolean;
+    advancedAnalytics: boolean;
+    apiAccess: boolean;
+    aiBriefing?: boolean;
+    aiCopilot?: boolean;
+  };
   status: 'ACTIVE' | 'RETIRED';
   institutions?: number;
 }
@@ -73,7 +83,7 @@ export interface Institution {
   planId: string | Plan | null;
   subscription: { startsAt: string | null; endsAt: string | null; isTrial: boolean };
   subscriptionState?: 'ACTIVE' | 'GRACE' | 'READ_ONLY' | 'NONE';
-  branding: { logoUrl: string; primaryColor: string };
+  branding: { logoUrl: string; primaryColor: string; sidebarColor?: string };
   bankAccount: { bankName: string; accountTitle: string; accountNumber: string; iban: string };
   settings: { eligibilityAsSeparateStep: boolean; requireOriginals?: boolean };
   createdAt: string;
@@ -173,7 +183,6 @@ export interface AuditEntry {
   ip: string;
 }
 
-/** Public program card returned by /public endpoints. */
 export interface PublicProgram {
   id: string;
   title: string;

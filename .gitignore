@@ -1,8 +1,7 @@
-
 # ==========================================
-# ADMITRA - Phase 4
-# Root Git Ignore
+# ADMITRA - Root Git Ignore
 # Backend + Frontend
+# Phase 5
 # ==========================================
 
 # Dependencies
@@ -22,9 +21,9 @@
 !**/.env.*.example
 
 # Next.js
-frontend/.next/
-frontend/out/
-frontend/next-env.d.ts
+**/.next/
+**/out/
+**/next-env.d.ts
 
 # Build output
 **/dist/
@@ -41,7 +40,7 @@ frontend/next-env.d.ts
 backend/storage/*
 !backend/storage/.gitkeep
 
-# Backups
+# Backups and database dumps
 **/backups/
 **/*.bak
 **/*.backup
@@ -75,10 +74,10 @@ Thumbs.db
 Desktop.ini
 
 # Certificates and private keys
-*.pem
-*.key
-*.p12
-*.pfx
+**/*.pem
+**/*.key
+**/*.p12
+**/*.pfx
 
 # Temporary files and caches
 **/.cache/

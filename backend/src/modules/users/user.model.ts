@@ -13,6 +13,7 @@ const userSchema = new Schema(
     lockedUntil: { type: Date, default: null },
     status: { type: String, enum: ['ACTIVE', 'DISABLED'], default: 'ACTIVE' },
     theme: { type: String, enum: ['light', 'dark', 'system'], default: 'system' },
+    avatarKey: { type: String, default: '' },
     lastLoginAt: Date,
   },
   { timestamps: true },
@@ -31,5 +32,6 @@ export function publicUser(u: UserDoc | (User & { _id: unknown })) {
     platformRole: u.platformRole ?? null,
     emailVerified: u.emailVerified,
     theme: u.theme,
+    avatarUrl: u.avatarKey ? `/api/v1/assets/${u.avatarKey}` : '',
   };
 }

@@ -11,7 +11,6 @@ import { RecordModel } from '../records/record.models';
 import { MemberModel } from '../staff/member.model';
 import { FileModel } from './file.model';
 
-/** DOC-3: files are streamed only to their owner or to staff of an institution the applicant applied to. */
 export const fileRouter = Router();
 fileRouter.use(authenticate);
 
@@ -36,5 +35,5 @@ fileRouter.get('/:id', async (req, res) => {
         status: { $ne: 'DRAFT' },
       })));
   if (!linked) throw ApiError.notFound('File');
-  streamFile(res, file);
+  await streamFile(res, file);
 });

@@ -30,10 +30,13 @@ const profileBody = z.object({
   address: z.string().trim().max(300).optional(),
   branding: z
     .object({
-      logoUrl: z.string().trim().url().or(z.literal('')).optional(),
       primaryColor: z
         .string()
-        .regex(/^#[0-9A-Fa-f]{6}$/, 'Use a hex color like #1F6FEB')
+        .regex(/^(#[0-9A-Fa-f]{6})?$/, 'Use a hex colour like #1A62D6')
+        .optional(),
+      sidebarColor: z
+        .string()
+        .regex(/^(#[0-9A-Fa-f]{6})?$/, 'Use a hex colour like #0B1B3A')
         .optional(),
     })
     .optional(),
@@ -94,7 +97,6 @@ institutionRouter.get('/subscription', async (req, res) => {
   });
 });
 
-/** Base dashboard of the institution workspace (Phase 1 figures). */
 institutionRouter.get('/dashboard', requirePermission(PERMISSIONS.DASHBOARD_VIEW), async (req, res) => {
   const institutionId = req.tenant!.institutionId;
   const [programs, campaigns, staff, departments, session] = await Promise.all([

@@ -19,14 +19,13 @@ import {
   type TicketPriority,
   type TicketStatus,
 } from './support.model';
+import { brand } from '../../lib/brand';
 
 type Ticket = HydratedDocument<SupportTicket>;
 
-/** User text is escaped before it goes into an HTML e-mail (SEC-4). */
 const escapeHtml = (v: string) =>
   v.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 
-/** Statuses each side may set. The platform team drives the work; the institution confirms or reopens. */
 export const PLATFORM_STATUSES: TicketStatus[] = [
   'IN_PROGRESS',
   'WAITING_ON_INSTITUTION',
@@ -58,7 +57,6 @@ async function platformTeam() {
   return UserModel.find({ platformRole: 'SUPER_ADMIN', status: 'ACTIVE' }).select('email fullName').lean();
 }
 
-/** Institution admins who follow tickets: the opener plus every active admin of the institution. */
 async function institutionContacts(t: Ticket) {
   const admins = await MemberModel.find({
     institutionId: t.institutionId,
@@ -71,7 +69,6 @@ async function institutionContacts(t: Ticket) {
     .lean();
 }
 
-/** SUP-3: tells the other party about a new ticket or reply, in the app and by e-mail. */
 async function tellOtherSide(t: Ticket, fromSide: 'INSTITUTION' | 'PLATFORM', title: string, body: string) {
   const inst = await InstitutionModel.findById(t.institutionId).select('name').lean();
   const recipients = fromSide === 'INSTITUTION' ? await platformTeam() : await institutionContacts(t);
@@ -140,7 +137,6 @@ export async function reply(
   let status = b.status ?? null;
   if (status && !(side === 'PLATFORM' ? PLATFORM_STATUSES : INSTITUTION_STATUSES).includes(status))
     throw ApiError.badRequest('This status cannot be set from here.');
-  // A reply from the institution reopens a ticket that was waiting on it, resolved or closed.
   if (
     side === 'INSTITUTION' &&
     !status &&
@@ -172,7 +168,7 @@ export async function reply(
   await tellOtherSide(
     t,
     side,
-    `${side === 'PLATFORM' ? 'ADMITRA support' : req.auth!.name} replied to ${t.ticketNumber}`,
+    `${side === 'PLATFORM' ? `${brand().platformName} support` : req.auth!.name} replied to ${t.ticketNumber}`,
     b.message.length > 160 ? `${b.message.slice(0, 157)}...` : b.message,
   );
   return t;

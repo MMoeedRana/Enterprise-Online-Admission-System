@@ -1,5 +1,6 @@
 'use client';
 
+import { BriefingCard } from '@/features/mitra/mitra-page';
 import { useQuery } from '@tanstack/react-query';
 import { Building2, CalendarRange, Clock, GraduationCap, UserRound } from 'lucide-react';
 import Link from 'next/link';
@@ -14,6 +15,7 @@ import { get } from '@/lib/api';
 import { INSTITUTION_TYPES } from '@/lib/constants';
 import { formatDate, formatDateTime, formatNumber } from '@/lib/format';
 import type { AuditEntry } from '@/lib/types';
+import { useBrand } from '@/features/branding/brand-context';
 
 interface Dashboard {
   counts: Record<string, number>;
@@ -40,12 +42,13 @@ export function humanAction(a: string) {
 }
 
 export function PlatformDashboard() {
+  const brand = useBrand();
   const q = useQuery({ queryKey: ['platform', 'dashboard'], queryFn: () => get<Dashboard>('/platform/dashboard') });
   if (!q.data) return <FullPageLoader />;
   const d = q.data;
   return (
     <>
-      <PageHeader title="Dashboard" subtitle="The ADMITRA platform at a glance" />
+      <PageHeader title="Dashboard" subtitle={`The ${brand.platformName} platform at a glance`} />
       <KpiGrid>
         <KpiCard
           label="Active institutions"
@@ -75,6 +78,9 @@ export function PlatformDashboard() {
           tint="purple"
         />
       </KpiGrid>
+      <div className="mt-6">
+        <BriefingCard scope="platform" compact />
+      </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[1.4fr_1fr]">
         <Card>
@@ -126,7 +132,7 @@ export function PlatformDashboard() {
                   cursor={{ fill: 'var(--card-soft)' }}
                   contentStyle={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 12 }}
                 />
-                <Bar dataKey="count" name="Institutions" fill="#1F6FEB" radius={[8, 8, 0, 0]} maxBarSize={48} />
+                <Bar dataKey="count" name="Institutions" fill="var(--primary)" radius={[8, 8, 0, 0]} maxBarSize={48} />
               </BarChart>
             </ResponsiveContainer>
           </div>

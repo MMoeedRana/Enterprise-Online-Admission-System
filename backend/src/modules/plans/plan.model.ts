@@ -18,6 +18,8 @@ const planSchema = new Schema(
       customBranding: { type: Boolean, default: false },
       advancedAnalytics: { type: Boolean, default: false },
       apiAccess: { type: Boolean, default: false },
+      aiCopilot: { type: Boolean, default: false },
+      aiBriefing: { type: Boolean, default: false },
     },
     status: { type: String, enum: ['ACTIVE', 'RETIRED'], default: 'ACTIVE' },
   },

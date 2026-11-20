@@ -18,6 +18,7 @@ import { getPaged, get } from '@/lib/api';
 import { DEGREE_LEVELS, PROVINCES } from '@/lib/constants';
 import { formatDate, formatMoney } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { useBrand } from '@/features/branding/brand-context';
 
 export const DATA_STATUS: Record<string, { label: string; tone: 'green' | 'amber' | 'gray' }> = {
   VERIFIED: { label: 'Verified data', tone: 'green' },
@@ -25,8 +26,8 @@ export const DATA_STATUS: Record<string, { label: string; tone: 'green' | 'amber
   NONE: { label: 'No data yet', tone: 'gray' },
 };
 
-/** DIR-6 (Figure 4.4): institutions and programs with filters and comparison. */
 export function DirectoryPage() {
+  const brand = useBrand();
   const [f, setF] = useState({
     q: '',
     province: '',
@@ -127,7 +128,7 @@ export function DirectoryPage() {
         </div>
         <Checkbox
           className="mt-3 w-fit border-0 p-0"
-          label="Admissions open on ADMITRA now"
+          label={`Admissions open on ${brand.platformName} now`}
           checked={f.openOnly}
           onChange={(e) => set('openOnly', e.target.checked)}
         />
@@ -155,7 +156,7 @@ export function DirectoryPage() {
               <Card className="flex h-full flex-col p-5 transition-shadow hover:shadow-lg">
                 <div className="flex items-start justify-between gap-2">
                   <Badge tone={DATA_STATUS[p.dataStatus]!.tone}>{DATA_STATUS[p.dataStatus]!.label}</Badge>
-                  {p.institution.onAdmitra && <Badge tone="blue">On ADMITRA</Badge>}
+                  {p.institution.onAdmitra && <Badge tone="blue">On {brand.platformName}</Badge>}
                 </div>
                 <Link
                   href={`/directory/programs/${p._id}`}
