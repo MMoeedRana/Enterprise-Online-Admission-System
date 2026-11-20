@@ -5,7 +5,7 @@ Department of Computer Science, Government College University Faisalabad
 
 ADMITRA is a multi-institution online admission platform that enables colleges and universities to manage their admissions through separate, secure workspaces. Students maintain a single profile and can use it to apply to multiple participating institutions.
 
-The platform provides institution management, applicant registration, academic record verification, admission applications, document review, fee processing, and admission workflow management.
+The platform provides institution management, applicant registration, academic record verification, admission applications, merit processing, enrollment management, admission guidance, and result discovery.
 
 ## Project Structure
 
@@ -27,13 +27,13 @@ ADMITRA/
 | Layer | Technology |
 |---|---|
 | Frontend | Next.js 16 App Router, React 19, TypeScript, Tailwind CSS 4 |
-| UI and Data | TanStack React Query 5, Axios, React Hook Form, Zod, Recharts, Lucide |
+| UI and Data | TanStack React Query 5, Axios, React Hook Form, Zod, Recharts, Framer Motion, Lucide icons |
 | Backend | Node.js, Express.js 5, TypeScript, Mongoose 9, Zod |
 | Authentication | JWT, Argon2id |
 | Security and Logging | Helmet, Pino |
 | Communication | Nodemailer, Socket.IO |
 | Documents and Data | PDFKit, Multer, Papa Parse, ExcelJS |
-| Database | MongoDB 8 Community Server, MongoDB Compass |
+| Database | MongoDB 8 Community Server (single-node replica set), MongoDB Compass |
 | Testing | Vitest, Supertest |
 
 ## 1. Prerequisites
@@ -72,7 +72,7 @@ ADMITRA uses MongoDB transactions, which require a replica set. A single-node re
    mongodb://127.0.0.1:27017/?directConnection=true
    ```
 
-5. Open the MongoDB shell (MONGOSH) and run the following command once:
+5. Open the MongoDB shell (MONGOSH) and run this command once:
 
    ```javascript
    rs.initiate({
@@ -117,13 +117,25 @@ npm install
 
 Create your local environment file by copying `.env.example` to `.env`.
 
-Configure the MongoDB connection and other environment variables if required. The default local development settings should be used as the starting point.
+Configure the MongoDB connection and other environment variables if required.
 
-Seed the database with the Super Admin, subscription plans, and sample institutions:
+### Load the complete demonstration dataset
+
+To create the Super Admin, subscription plans, sample institutions, applicants, merit lists, and reference directory data, run:
 
 ```bash
-npm run seed -- --sample
+npm run seed:demo
 ```
+
+**Important:** The demo seed command clears the existing database before loading the complete sample dataset. It takes approximately 30 seconds and should only be used in development.
+
+For a clean installation without demonstration records, run:
+
+```bash
+npm run seed
+```
+
+This creates the Super Admin and subscription plans. Dashboards will initially show empty data until records are added.
 
 Start the backend development server:
 
@@ -143,7 +155,7 @@ Health check:
 http://localhost:5000/api/v1/health
 ```
 
-During development, verification, invitation, and password-reset email links are printed in the backend terminal. To receive emails in an inbox, configure SMTP settings in `.env`.
+During development, verification, invitation, and password-reset email links are printed in the backend terminal. To receive emails in an inbox, configure SMTP settings in `.env` (for example, Mailpit on `127.0.0.1:1025`).
 
 ## 4. Frontend Setup
 
@@ -180,33 +192,45 @@ Frontend requests to `/api/v1` are forwarded to the backend API.
 The following sample accounts are available after running:
 
 ```bash
-npm run seed -- --sample
+npm run seed:demo
 ```
 
-| Role | Email | Password |
+All sample accounts use the password `Admitra@123`, except the Super Admin, which uses the password configured in `.env`.
+
+| Role | Email | What to Explore |
 |---|---|---|
-| Super Admin | admin@admitra.local | Admin@12345 (configured in `.env`) |
-| Institution Admin | admin@cvu.example.edu.pk | Admitra@123 |
-| Admission Officer | officer@cvu.example.edu.pk | Admitra@123 |
-| HOD Officer | hod.cs@cvu.example.edu.pk | Admitra@123 |
-| Finance Officer | finance@cvu.example.edu.pk | Admitra@123 |
-| Merit Committee | merit1@cvu.example.edu.pk | Admitra@123 |
-| Applicant | ayesha.noor@example.com | Admitra@123 |
-| Applicant | bilal.ahmed@example.com | Admitra@123 |
-| Applicant | sara.khan@example.com | Admitra@123 |
-| Applicant | hamza.ali@example.com | Admitra@123 |
+| Super Admin | admin@admitra.local | Institutions, plans, registry imports, Reference Directory, verification queue, data gaps, claims, and Admission Advisor usage |
+| Institution Admin (Crescent Valley University) | admin@cvu.example.edu.pk | Fall 2026 campaign, applications, and directory data |
+| Admission Officer (CVU) | officer@cvu.example.edu.pk | Application review and marks verification |
+| HOD Officer, Computer Science (CVU) | hod.cs@cvu.example.edu.pk | Applications belonging to the Computer Science department |
+| Finance Officer (CVU) | finance@cvu.example.edu.pk | Payment verification |
+| Merit Committee (CVU) | merit1@cvu.example.edu.pk | Active merit formulas and proposed BSCS formula version 2 |
+| Institution Admin (Riverside Institute of Technology) | admin@rit.example.edu.pk | Merit publication, revocation, offers, and enrollment |
+| Admissions and Accounts (RIT) | officer@rit.example.edu.pk | Admission-fee proofs and original-document checks |
+| Merit Committee (RIT) | merit1@rit.example.edu.pk | Generated merit list 3 awaiting the second member's approval |
+| Merit Committee (RIT) | merit2@rit.example.edu.pk | Second-member approval under the four-eyes rule |
+| Applicant | ayesha.noor@example.com | CVU application under review and an open RIT offer from merit list 2 |
+| Applicant | zainab.tariq@example.com | RIT enrollment, registration number, and admission letter |
+| Applicant | mahnoor.fatima@example.com | RIT waiting-list status |
+| Applicant | danish.iqbal@example.com | RIT non-selection and Admission Advisor program suggestions |
+| Applicant | bilal.ahmed@example.com | Verified CVU application |
+| Applicant | sara.khan@example.com | Marks mismatch during document verification |
+| Applicant | hamza.ali@example.com | Payment proof awaiting verification |
 
-The applicant accounts represent different application and verification scenarios, including fee verification, application review, marks mismatch, and pending payment verification.
+### Demonstration Dataset
 
-All sample institutions and applicant records are fictional and intended only for development and demonstration.
+The sample dataset includes:
 
-**Reset sample data (development only):**
+- A complete admission cycle at Riverside Institute of Technology.
+- 76 applications and three merit lists.
+- Admission offers, acceptances, admission fees, and enrollment records.
+- Expired and declined offers.
+- One revocation scenario.
+- A Reference Directory containing 18 institutions and three years of closing merit history.
 
-```bash
-npm run seed -- --reset --sample
-```
+Every institution, person, and figure in the sample dataset is fictional and exists only for development and demonstration.
 
-This command clears the database and recreates the sample data. It must only be used in a development environment.
+The demo seed command is refused in production.
 
 ## 6. Available Scripts
 
@@ -214,8 +238,10 @@ This command clears the database and recreates the sample data. It must only be 
 
 | Command | Purpose |
 |---|---|
-| `npm run dev` | Start the API in development mode |
-| `npm test` | Run backend tests |
+| `npm run dev` | Start the API with automatic restart |
+| `npm test` | Run backend tests (downloads a MongoDB test server on first execution) |
+| `npm run seed` | Create the Super Admin and subscription plans |
+| `npm run seed:demo` | Clear the database and load the complete demonstration dataset |
 | `npm run build` | Build the production backend |
 | `npm start` | Start the production backend |
 | `npm run lint` | Run lint checks |
@@ -237,7 +263,7 @@ This command clears the database and recreates the sample data. It must only be 
 |---|---|---|
 | Phase 1 | Foundation, SaaS Core and Design System | Complete |
 | Phase 2 | Applicant Portal, Verified Marks and Admission Operations | Complete |
-| Phase 3 | Merit, Enrollment, Admission Advisor and Result Finder | Planned |
+| Phase 3 | Merit, Enrollment, Admission Advisor and Result Finder | Complete |
 | Phase 4 | Analytics, Support, Quality and Delivery | Planned |
 
 ## 8. Implemented Features
@@ -303,7 +329,80 @@ This command clears the database and recreates the sample data. It must only be 
 - Editable email templates.
 - Email notifications for relevant admission events.
 
-## 9. File Storage and Security
+### Phase 3 — Merit, Enrollment, Admission Advisor and Result Finder
+
+**Merit Formula Management**
+
+- Versioned merit formulas with a test mode.
+- Active and proposed formula versions.
+- Formula evaluation before activation.
+- Configurable merit calculation rules.
+
+**Merit Engine and Seat Allocation**
+
+- Merit aggregate calculation with a line-by-line breakdown.
+- Tie-breaker rules for equal merit scores.
+- Stable seat allocation using the deferred acceptance algorithm.
+- Merit calculations based only on verified academic marks.
+
+**Merit Lists and Approval**
+
+- Merit list generation and revision management.
+- Four-eyes approval requiring two authorized committee members.
+- Transaction-based merit list publication.
+- Waiting-list management.
+- Controlled publication and revision workflows.
+
+**Admission Offers and Enrollment**
+
+- Admission offers with acceptance deadlines.
+- Automatic expiry of overdue offers.
+- Admission-fee challan generation.
+- Offer acceptance and decline workflows.
+- Student enrollment with registration number generation.
+- Admission letter generation.
+- Original-document verification on reporting day.
+- Admission revocation with an optional CNIC block.
+
+**Reference Directory**
+
+- Institution reference directory.
+- Historical closing merit records.
+- Merit history from forms and CSV imports.
+- Data verification and claims management.
+- Data-gap reporting.
+- Automatic reference-directory updates when a merit list is published.
+
+**Admission Advisor**
+
+- Admission chance estimation based on three years of historical closing merit.
+- Four chance categories: Safe, Target, Reach, and Unlikely.
+- Explanations behind predicted admission chances.
+- What-if analysis for exploring alternative academic scenarios.
+- Program shortlisting and comparison.
+- PDF export of shortlisted programs.
+- Indicative merit standing.
+- Anonymous usage logging.
+
+**Result Finder and Public Results**
+
+- Applicant-facing My Results section.
+- Public merit lists with search functionality.
+- PDF merit list exports.
+- Application and admission status lookup.
+- CAPTCHA-protected public status lookup.
+
+## 9. Interface and Responsive Design
+
+ADMITRA uses a responsive, full-width interface designed for different screen sizes.
+
+- Responsive layouts for phones, tablets, laptops, and large monitors.
+- Consistent spacing and adaptable page layouts.
+- Animated cards, figures, and page transitions using Framer Motion.
+- Animations respect the operating system's reduced-motion preference.
+- Light and dark themes across the application.
+
+## 10. File Storage and Security
 
 Applicant documents and uploaded files are stored in:
 
@@ -315,11 +414,13 @@ Uploaded files are stored outside the frontend web root and are accessible only 
 
 The local storage directory is excluded from Git tracking to prevent uploaded documents and private files from being committed to the repository.
 
-## 10. Project Scope
+## 11. Project Scope and Future Development
 
 ADMITRA is being developed as a multi-institution admission management platform with separate institutional workspaces, centralized applicant profiles, and role-based access.
 
-The completed phases establish the platform foundation and core admission operations. Future development phases will extend the system with merit processing, enrollment management, admission assistance, analytics, support, and final delivery activities.
+Phases 1, 2, and 3 establish the platform foundation, core admission operations, merit processing, enrollment, and admission guidance.
+
+Phase 4 is planned to focus on analytics, support, quality assurance, security validation, and final delivery.
 
 ---
 

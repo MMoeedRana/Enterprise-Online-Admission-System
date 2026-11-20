@@ -4,7 +4,7 @@ import { Logo } from './logo';
 export function PublicFooter() {
   return (
     <footer className="border-line bg-card mt-16 border-t">
-      <div className="mx-auto grid max-w-[1200px] gap-8 px-4 py-10 sm:px-6 md:grid-cols-[1.5fr_1fr_1fr]">
+      <div className="page-container grid gap-8 py-10 md:grid-cols-[1.5fr_1fr_1fr]">
         <div>
           <Logo />
           <p className="text-muted mt-3 max-w-sm text-[13px] leading-relaxed">
@@ -16,13 +16,28 @@ export function PublicFooter() {
           <p className="text-ink text-[13px] font-bold">Students</p>
           <ul className="mt-3 space-y-2 text-[13px]">
             <li>
-              <Link href="/programs" className="hover:text-primary">
-                Find programs
+              <Link href="/advisor" className="hover:text-primary">
+                Admission Advisor
               </Link>
             </li>
             <li>
-              <Link href="/institutions" className="hover:text-primary">
-                Institutions
+              <Link href="/directory" className="hover:text-primary">
+                Directory of colleges and universities
+              </Link>
+            </li>
+            <li>
+              <Link href="/programs" className="hover:text-primary">
+                Open programs
+              </Link>
+            </li>
+            <li>
+              <Link href="/merit-lists" className="hover:text-primary">
+                Merit lists
+              </Link>
+            </li>
+            <li>
+              <Link href="/status" className="hover:text-primary">
+                Check application status
               </Link>
             </li>
             <li>

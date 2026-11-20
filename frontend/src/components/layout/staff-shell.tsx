@@ -1,5 +1,6 @@
 'use client';
 
+import { PageFade } from '@/components/ui/motion';
 import type { LucideIcon } from 'lucide-react';
 import { Menu, Search, X } from 'lucide-react';
 import Link from 'next/link';
@@ -16,7 +17,8 @@ export interface NavItem {
   href: string;
   label: string;
   icon: LucideIcon;
-  permission?: string;
+  /** Shown when the member has the permission (or any of them). */
+  permission?: string | string[];
 }
 export interface NavSection {
   title: string;
@@ -55,7 +57,11 @@ function Sidebar({
             </p>
             <ul className="space-y-1">
               {s.items
-                .filter((it) => !it.permission || can(it.permission))
+                .filter(
+                  (it) =>
+                    !it.permission ||
+                    (Array.isArray(it.permission) ? it.permission.some((p) => can(p)) : can(it.permission)),
+                )
                 .map((it) => {
                   const active = pathname === it.href || pathname.startsWith(it.href + '/');
                   return (
@@ -158,7 +164,9 @@ export function StaffShell({ sections, roleLabel, orgName, search, headerExtra, 
           </div>
         </header>
         {banner}
-        <main className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</main>
+        <main className="w-full px-4 py-6 sm:px-6 lg:px-8 lg:py-8 2xl:px-12">
+          <PageFade>{children}</PageFade>
+        </main>
       </div>
     </div>
   );

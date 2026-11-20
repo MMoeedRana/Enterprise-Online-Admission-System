@@ -21,6 +21,17 @@ import { profileRouter } from './modules/profile/profile.routes';
 import { recordRouter } from './modules/records/record.routes';
 import { verificationRouter } from './modules/records/verification.routes';
 import { institutionRegistryRouter, platformRegistryRouter } from './modules/registry/registry.routes';
+import { formulaRouter } from './modules/merit/formula.routes';
+import { meritListRouter } from './modules/merit/merit-list.routes';
+import { offerRouter } from './modules/merit/offer.routes';
+import { myResultsRouter } from './modules/results/my-results.routes';
+import { publicResultsRouter } from './modules/results/public-results.routes';
+import { publicDirectoryRouter } from './modules/directory/public-directory.routes';
+import {
+  institutionDirectoryRouter,
+  platformDirectoryRouter,
+} from './modules/directory/directory-admin.routes';
+import { shortlistRouter } from './modules/directory/shortlist.routes';
 
 export const apiRouter = Router();
 
@@ -33,8 +44,10 @@ apiRouter.get('/health', (_req, res) => {
 });
 
 apiRouter.use('/auth', authRouter);
+apiRouter.use('/public', publicDirectoryRouter, publicResultsRouter);
 apiRouter.use('/public', publicRouter);
 apiRouter.use('/platform/registry', platformRegistryRouter);
+apiRouter.use('/platform/directory', platformDirectoryRouter);
 apiRouter.use('/platform', platformRouter);
 apiRouter.use('/notifications', notificationRouter);
 apiRouter.use('/files', fileRouter);
@@ -46,6 +59,8 @@ me.use('/profile', profileRouter);
 me.use('/records', recordRouter);
 me.use('/applications', applicantAppRouter);
 me.use('/dashboard', applicantDashboardRouter);
+me.use(myResultsRouter);
+me.use('/shortlist', shortlistRouter);
 apiRouter.use('/me', me);
 
 // Institution workspace: every route is authenticated and scoped to one tenant (SEC-1).
@@ -62,4 +77,8 @@ tenant.use('/payments', paymentRouter);
 tenant.use('/document-types', documentTypeRouter);
 tenant.use('/email-templates', emailTemplateRouter);
 tenant.use('/registry', institutionRegistryRouter);
+tenant.use('/merit-formulas', formulaRouter);
+tenant.use('/merit-lists', meritListRouter);
+tenant.use('/offers', offerRouter);
+tenant.use('/directory', institutionDirectoryRouter);
 apiRouter.use(tenant);

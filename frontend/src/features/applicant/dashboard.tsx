@@ -17,6 +17,7 @@ import { useAuth } from '@/features/auth/auth-context';
 import { errorMessage, get, post } from '@/lib/api';
 import { formatDateTime } from '@/lib/format';
 import type { AppNotification } from '@/lib/types';
+import { ResultHighlights } from '@/features/results/my-results';
 import { LEVEL_LABELS, type AcademicRecord, type AppListItem } from './types';
 
 const ATTENTION = ['DRAFT', 'PAYMENT_PENDING', 'DEFICIENT'];
@@ -60,6 +61,8 @@ export function ApplicantDashboard() {
         </ButtonLink>
       </div>
 
+      <ResultHighlights />
+
       {user && !user.emailVerified && (
         <Alert tone="warning" title="Please verify your e-mail address">
           <div className="mt-1 flex flex-wrap items-center gap-3">
@@ -100,7 +103,7 @@ export function ApplicantDashboard() {
       />
 
       <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           {list.length === 0 && (
             <Card>
               <EmptyState

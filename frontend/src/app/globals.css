@@ -100,3 +100,19 @@
     radial-gradient(1200px 400px at 85% -10%, rgba(59, 130, 246, 0.25), transparent 60%),
     linear-gradient(135deg, var(--navy) 0%, var(--navy-2) 100%);
 }
+
+/*
+ * Page frame used by the public site, the applicant portal, the header and the footer.
+ * A plain class (not a Tailwind @utility) so it always applies. Content is centred with a side
+ * gap that grows smoothly with the screen (16px on phones, up to 56px on laptops), and is limited
+ * to 1680px so very large monitors keep a balanced layout instead of stretching edge to edge.
+ */
+.page-container {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1680px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: clamp(1rem, 3.6vw, 3.5rem);
+  padding-right: clamp(1rem, 3.6vw, 3.5rem);
+}

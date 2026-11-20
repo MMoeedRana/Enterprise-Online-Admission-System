@@ -1,6 +1,6 @@
 
 # ==========================================
-# ADMITRA - Root Git Ignore
+# ADMITRA - Phase 3
 # Backend + Frontend
 # ==========================================
 
@@ -49,7 +49,7 @@ backend/storage/*
 # TypeScript
 **/*.tsbuildinfo
 
-# Next.js generated files
+# Generated files
 **/AGENTS.md
 
 # Vercel
@@ -73,7 +73,7 @@ Desktop.ini
 *.pfx
 
 # Temporary files and caches
-*.tmp
-*.temp
 .cache/
 .tmp/
+*.tmp
+*.temp
