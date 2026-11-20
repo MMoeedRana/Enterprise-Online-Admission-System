@@ -103,7 +103,7 @@ export function HistoryImport({ base, onDone }: { base: string; onDone: () => vo
               </div>
             </div>
             {preview.errors.length > 0 && (
-              <ul className="border-line max-h-40 space-y-1 overflow-y-auto rounded-xl border p-3 text-[12.5px] text-red-600">
+              <ul className="border-line max-h-40 space-y-1 overflow-y-auto rounded-xl border p-3 text-[12.5px] text-red-700 dark:text-red-400">
                 {preview.errors.map((e, i) => (
                   <li key={i}>
                     Line {e.line}: {e.message}
@@ -119,7 +119,12 @@ export function HistoryImport({ base, onDone }: { base: string; onDone: () => vo
                 error={err}
                 hint="For example: merit lists 2025 published on the university website."
               >
-                <Input id="h-source" value={source} onChange={(e) => (setSource(e.target.value), setErr(''))} />
+                <Input
+                  placeholder="e.g. Official merit list PDF 2025"
+                  id="h-source"
+                  value={source}
+                  onChange={(e) => (setSource(e.target.value), setErr(''))}
+                />
               </Field>
               <Button
                 icon={<Upload className="size-4" />}

@@ -179,7 +179,9 @@ export function RegistryImport({
                   {preview.errors.map((e, i) => (
                     <li
                       key={i}
-                      className={isDuplicate(e.message) ? 'text-amber-700 dark:text-amber-300' : 'text-red-600'}
+                      className={
+                        isDuplicate(e.message) ? 'text-amber-700 dark:text-amber-300' : 'text-red-700 dark:text-red-400'
+                      }
                     >
                       Line {e.line}: {e.message}
                     </li>
@@ -188,7 +190,7 @@ export function RegistryImport({
               </div>
             )}
             {preview.sample.length > 0 && (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Scrollable table">
                 <table className="w-full min-w-[560px] text-left text-[13px]">
                   <thead>
                     <tr className="border-line bg-card-soft text-muted border-y text-[11.5px] tracking-wider uppercase">
@@ -223,7 +225,12 @@ export function RegistryImport({
                 error={sourceError}
                 hint="For example: BISE Faisalabad gazette, Intermediate Annual 2025 (official website)."
               >
-                <Input id="source" value={source} onChange={(e) => (setSource(e.target.value), setSourceError(''))} />
+                <Input
+                  placeholder="e.g. BISE Faisalabad result gazette 2025"
+                  id="source"
+                  value={source}
+                  onChange={(e) => (setSource(e.target.value), setSourceError(''))}
+                />
               </Field>
               <Button
                 icon={<Upload className="size-4" />}

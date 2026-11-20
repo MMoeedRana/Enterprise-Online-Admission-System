@@ -42,7 +42,7 @@ export function AcceptInvitation() {
   if (q.isError) {
     return (
       <div className="text-center">
-        <XCircle className="mx-auto size-14 text-red-600" />
+        <XCircle className="mx-auto size-14 text-red-700 dark:text-red-400" />
         <h1 className="mt-4 text-[24px] font-bold">Invitation not valid</h1>
         <p className="text-muted mt-2 text-[14px]">
           {errorMessage(q.error)} Ask your institution admin to send a new invitation.
@@ -113,15 +113,26 @@ export function AcceptInvitation() {
             error={errors.password}
             hint="You already have an ADMITRA account with this e-mail."
           >
-            <PasswordInput id="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+            <PasswordInput
+              placeholder="Your ADMITRA password"
+              id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
           </Field>
         ) : (
           <>
             <Field label="Full name" htmlFor="fullName" error={errors.fullName}>
-              <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+              <Input
+                placeholder="Your full name"
+                id="fullName"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+              />
             </Field>
             <Field label="Choose a password" htmlFor="password" error={errors.password}>
               <PasswordInput
+                placeholder="At least 8 characters"
                 id="password"
                 autoComplete="new-password"
                 value={password}
@@ -131,6 +142,7 @@ export function AcceptInvitation() {
             <PasswordChecklist value={password} />
             <Field label="Confirm password" htmlFor="confirm" error={errors.confirm}>
               <PasswordInput
+                placeholder="Type the password again"
                 id="confirm"
                 autoComplete="new-password"
                 value={confirm}

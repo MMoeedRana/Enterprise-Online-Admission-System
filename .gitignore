@@ -1,6 +1,7 @@
 
 # ==========================================
-# ADMITRA - Phase 3
+# ADMITRA - Phase 4
+# Root Git Ignore
 # Backend + Frontend
 # ==========================================
 
@@ -31,13 +32,20 @@ frontend/next-env.d.ts
 
 # Testing and coverage
 **/coverage/
+**/e2e-report/
 **/test-results/
 **/playwright-report/
 **/.nyc_output/
 
-# Backend uploaded files and local storage
+# Backend storage and uploaded files
 backend/storage/*
 !backend/storage/.gitkeep
+
+# Backups
+**/backups/
+**/*.bak
+**/*.backup
+**/*.dump
 
 # Logs
 **/npm-debug.log*
@@ -73,7 +81,7 @@ Desktop.ini
 *.pfx
 
 # Temporary files and caches
-.cache/
-.tmp/
-*.tmp
-*.temp
+**/.cache/
+**/.tmp/
+**/*.tmp
+**/*.temp

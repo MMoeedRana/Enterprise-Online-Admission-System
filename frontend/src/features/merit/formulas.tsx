@@ -236,7 +236,7 @@ export function MeritFormulas() {
                         <Button
                           size="sm"
                           variant="ghost"
-                          icon={<Trash2 className="size-4 text-red-600" />}
+                          icon={<Trash2 className="size-4 text-red-700 dark:text-red-400" />}
                           onClick={() => setRemove(draft)}
                         >
                           Delete draft
@@ -381,6 +381,7 @@ function FormulaEditor({
               hint={c.type === 'ENTRY_TEST' ? 'Empty: any entry test' : undefined}
             >
               <Input
+                placeholder="e.g. ECAT"
                 id={`c-test-${i}`}
                 disabled={c.type !== 'ENTRY_TEST'}
                 value={c.testName}
@@ -389,6 +390,7 @@ function FormulaEditor({
             </Field>
             <Field label="Weight %" htmlFor={`c-w-${i}`}>
               <Input
+                placeholder="e.g. 50"
                 id={`c-w-${i}`}
                 inputMode="decimal"
                 value={String(c.weight)}
@@ -397,6 +399,7 @@ function FormulaEditor({
             </Field>
             <Field label="Min %" htmlFor={`c-min-${i}`}>
               <Input
+                placeholder="e.g. 45"
                 id={`c-min-${i}`}
                 inputMode="decimal"
                 value={c.minPercentage ?? ''}
@@ -418,7 +421,7 @@ function FormulaEditor({
                 aria-label="Remove component"
                 onClick={() => setComponents((cs) => cs.filter((_, j) => j !== i))}
               >
-                <Trash2 className="size-4 text-red-600" />
+                <Trash2 className="size-4 text-red-700 dark:text-red-400" />
               </Button>
             </div>
           </div>
@@ -438,7 +441,12 @@ function FormulaEditor({
           >
             Add component
           </Button>
-          <p className={cn('text-[14px] font-bold', total === 100 ? 'text-green-600' : 'text-red-600')}>
+          <p
+            className={cn(
+              'text-[14px] font-bold',
+              total === 100 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400',
+            )}
+          >
             Total {total}% {total === 100 ? '✓' : '(must be 100)'}
           </p>
         </div>
@@ -498,7 +506,13 @@ function FormulaEditor({
           </p>
         </div>
         <Field label="Note for the committee" htmlFor="f-note">
-          <Textarea id="f-note" rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
+          <Textarea
+            placeholder="What changed in this formula"
+            id="f-note"
+            rows={2}
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+          />
         </Field>
       </div>
     </Modal>
@@ -538,6 +552,7 @@ function TestPanel({ title, components, onClose }: { title: string; components: 
         {components.map((c) => (
           <Field key={c.type} label={`${COMPONENTS[c.type]} %`} htmlFor={`t-${c.type}`}>
             <Input
+              placeholder="e.g. 80"
               id={`t-${c.type}`}
               inputMode="decimal"
               value={marks[c.type]}
@@ -560,7 +575,7 @@ function TestPanel({ title, components, onClose }: { title: string; components: 
             <p key={b.label} className="flex justify-between text-[13px]">
               <span>
                 {b.label}: {b.percentage ?? '-'} x {b.weight}%
-                {b.note ? <span className="text-red-600"> ({b.note})</span> : null}
+                {b.note ? <span className="text-red-700 dark:text-red-400"> ({b.note})</span> : null}
               </span>
               <b>{b.contribution.toFixed(2)}</b>
             </p>
@@ -569,7 +584,9 @@ function TestPanel({ title, components, onClose }: { title: string; components: 
             <span>Aggregate</span>
             <span className="text-primary">{run.data.aggregate.toFixed(2)}</span>
           </p>
-          {!run.data.ok && <p className="mt-1 text-[12.5px] text-red-600">Would be excluded: {run.data.reason}</p>}
+          {!run.data.ok && (
+            <p className="mt-1 text-[12.5px] text-red-700 dark:text-red-400">Would be excluded: {run.data.reason}</p>
+          )}
         </div>
       )}
     </Modal>

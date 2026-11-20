@@ -187,7 +187,7 @@ export function StaffPage() {
                         aria-label="Cancel invitation"
                         onClick={() => setConfirm({ type: 'cancel', member: m })}
                       >
-                        <X className="size-4 text-red-600" />
+                        <X className="size-4 text-red-700 dark:text-red-400" />
                       </Button>
                     </>
                   ) : (
@@ -197,7 +197,13 @@ export function StaffPage() {
                       aria-label={m.status === 'ACTIVE' ? 'Disable' : 'Enable'}
                       onClick={() => setConfirm({ type: 'status', member: m })}
                     >
-                      <Power className={m.status === 'ACTIVE' ? 'size-4 text-red-600' : 'size-4 text-green-600'} />
+                      <Power
+                        className={
+                          m.status === 'ACTIVE'
+                            ? 'size-4 text-red-700 dark:text-red-400'
+                            : 'size-4 text-green-700 dark:text-green-400'
+                        }
+                      />
                     </Button>
                   )}
                   <Button size="icon" variant="ghost" aria-label="Edit roles" onClick={() => open(m)}>
@@ -230,6 +236,7 @@ export function StaffPage() {
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="E-mail" htmlFor="st-email" required error={errors.email}>
             <Input
+              placeholder="name@institution.edu.pk"
               id="st-email"
               type="email"
               disabled={editing !== 'new'}
@@ -239,6 +246,7 @@ export function StaffPage() {
           </Field>
           <Field label="Full name" htmlFor="st-name" required error={errors.fullName}>
             <Input
+              placeholder="Full name"
               id="st-name"
               disabled={editing !== 'new'}
               value={draft.fullName}
@@ -247,6 +255,7 @@ export function StaffPage() {
           </Field>
           <Field label="Designation" htmlFor="st-des" className="sm:col-span-2">
             <Input
+              placeholder="e.g. Admission Officer"
               id="st-des"
               value={draft.designation}
               onChange={(e) => setDraft({ ...draft, designation: e.target.value })}
@@ -267,7 +276,9 @@ export function StaffPage() {
                 />
               ))}
             </div>
-            {errors.roles && <p className="mt-1 text-[12px] font-medium text-red-600">{errors.roles}</p>}
+            {errors.roles && (
+              <p className="mt-1 text-[12px] font-medium text-red-700 dark:text-red-400">{errors.roles}</p>
+            )}
           </fieldset>
           {draft.roles.includes('HOD_OFFICER') && (
             <fieldset className="sm:col-span-2">
@@ -285,7 +296,7 @@ export function StaffPage() {
                 ))}
               </div>
               {errors.departmentIds && (
-                <p className="mt-1 text-[12px] font-medium text-red-600">{errors.departmentIds}</p>
+                <p className="mt-1 text-[12px] font-medium text-red-700 dark:text-red-400">{errors.departmentIds}</p>
               )}
             </fieldset>
           )}

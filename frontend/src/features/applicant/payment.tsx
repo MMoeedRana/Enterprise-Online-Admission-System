@@ -140,7 +140,7 @@ export function PaymentPage({ id }: { id: string }) {
                       </p>
                       <p className="text-muted text-[12.5px]">
                         {formatMoney(p.amount)} paid on {formatDate(p.paidOn)}
-                        {p.reason && <span className="text-red-600"> · {p.reason}</span>}
+                        {p.reason && <span className="text-red-700 dark:text-red-400"> · {p.reason}</span>}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -211,7 +211,13 @@ export function PaymentPage({ id }: { id: string }) {
                       />
                     </Field>
                     <Field label="Paid on" htmlFor="paidOn" error={errors.paidOn?.message} required>
-                      <Input id="paidOn" type="date" max={toDateInput(new Date())} {...form.register('paidOn')} />
+                      <Input
+                        placeholder="DD/MM/YYYY"
+                        id="paidOn"
+                        type="date"
+                        max={toDateInput(new Date())}
+                        {...form.register('paidOn')}
+                      />
                     </Field>
                   </div>
                   <FileDrop
