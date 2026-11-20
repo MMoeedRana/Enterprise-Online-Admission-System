@@ -1,3 +1,9 @@
+
+# ==========================================
+# ADMITRA - Root Git Ignore
+# Backend + Frontend
+# ==========================================
+
 # Dependencies
 **/node_modules/
 **/.pnp
@@ -12,17 +18,14 @@
 **/.env
 **/.env.*
 !**/.env.example
+!**/.env.*.example
 
 # Next.js
-/frontend/.next/
-/frontend/out/
-/frontend/build/
+frontend/.next/
+frontend/out/
+frontend/next-env.d.ts
 
-# Backend build output
-/backend/dist/
-backend/build/
-
-# General build output
+# Build output
 **/dist/
 **/build/
 
@@ -32,9 +35,9 @@ backend/build/
 **/playwright-report/
 **/.nyc_output/
 
-# Runtime storage and uploaded files
-/backend/storage/*
-!/backend/storage/.gitkeep
+# Backend uploaded files and local storage
+backend/storage/*
+!backend/storage/.gitkeep
 
 # Logs
 **/npm-debug.log*
@@ -45,14 +48,15 @@ backend/build/
 
 # TypeScript
 **/*.tsbuildinfo
-**/next-env.d.ts
+
+# Next.js generated files
+**/AGENTS.md
 
 # Vercel
 **/.vercel/
 
 # IDE and editor
-.vscode/*
-!.vscode/extensions.json
+.vscode/
 .idea/
 *.swp
 *.swo
@@ -68,7 +72,7 @@ Desktop.ini
 *.p12
 *.pfx
 
-# Temporary files
+# Temporary files and caches
 *.tmp
 *.temp
 .cache/
