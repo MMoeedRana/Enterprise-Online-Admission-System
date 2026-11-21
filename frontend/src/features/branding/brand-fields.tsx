@@ -100,6 +100,7 @@ export function ImageField({
   label,
   hint,
   url,
+  defaultUrl,
   uploadUrl,
   accept = 'image/png,image/jpeg,image/webp',
   rounded = 'rounded-2xl',
@@ -109,6 +110,7 @@ export function ImageField({
   label: string;
   hint: string;
   url: string;
+  defaultUrl?: string;
   uploadUrl: string;
   accept?: string;
   rounded?: string;
@@ -153,15 +155,22 @@ export function ImageField({
           rounded,
         )}
       >
-        {url ? (
+        {url || defaultUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={url} alt={`${label} preview`} className="size-full object-contain" />
+          <img src={url || defaultUrl} alt={`${label} preview`} className="size-full object-contain" />
         ) : (
           <ImageUp className="text-muted size-7" aria-hidden />
         )}
       </span>
       <div className="min-w-0 space-y-2">
-        <p className="text-ink text-[13.5px] font-semibold">{label}</p>
+        <p className="text-ink flex items-center gap-2 text-[13.5px] font-semibold">
+          {label}
+          {!url && defaultUrl && (
+            <span className="bg-primary-soft text-primary rounded-full px-2 py-0.5 text-[11px] font-semibold">
+              Default
+            </span>
+          )}
+        </p>
         <p className="text-muted text-[12px]">{hint}</p>
         <div className="flex flex-wrap gap-2">
           <input
@@ -180,7 +189,7 @@ export function ImageField({
             disabled={disabled}
             onClick={() => ref.current?.click()}
           >
-            {url ? 'Replace' : 'Upload'}
+            {url || defaultUrl ? 'Replace' : 'Upload'}
           </Button>
           {url && (
             <Button

@@ -11,7 +11,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { FullPageLoader } from '@/components/ui/spinner';
 import { toast } from '@/components/ui/toast';
 import { errorMessage, fieldErrors, get, patch, post } from '@/lib/api';
-import { isHex, type Brand } from '@/lib/brand';
+import { isHex, type Brand, DEFAULT_FAVICON_URL, DEFAULT_LOGO_URL } from '@/lib/brand';
 import { brandKey } from './brand-context';
 import { BrandPreview, ColorField, ImageField } from './brand-fields';
 
@@ -142,6 +142,7 @@ export function PlatformBranding() {
                   label="Logo"
                   hint="Square images look best (at least 128 × 128 px)."
                   url={b.logoUrl}
+                  defaultUrl={b.platformName.trim().toUpperCase() === 'ADMITRA' ? DEFAULT_LOGO_URL : undefined}
                   uploadUrl="/platform/branding/logo"
                   onDone={(d) => void refresh(d as Brand)}
                 />
@@ -149,6 +150,7 @@ export function PlatformBranding() {
                   label="Favicon"
                   hint="The small icon of the browser tab (32 × 32 or 64 × 64 px)."
                   url={b.faviconUrl}
+                  defaultUrl={DEFAULT_FAVICON_URL}
                   uploadUrl="/platform/branding/favicon"
                   accept="image/png,image/x-icon,.ico"
                   rounded="rounded-xl"

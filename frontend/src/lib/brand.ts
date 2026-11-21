@@ -9,6 +9,13 @@ export interface Brand {
   avatarColor: string;
 }
 
+export const DEFAULT_LOGO_URL = '/brand/admitra-logo.png';
+export const DEFAULT_FAVICON_URL = '/brand/admitra-favicon.png';
+
+export function logoFor(b: Pick<Brand, 'logoUrl' | 'platformName'>) {
+  return b.logoUrl || (b.platformName.trim().toUpperCase() === DEFAULT_BRAND.platformName ? DEFAULT_LOGO_URL : '');
+}
+
 export const DEFAULT_BRAND: Brand = {
   platformName: 'ADMITRA',
   tagline: 'One profile. Every college and university.',

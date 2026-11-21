@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
-import { brandCss } from '@/lib/brand';
+import { brandCss, DEFAULT_FAVICON_URL } from '@/lib/brand';
 import { serverBrand } from '@/lib/server-brand';
 import './globals.css';
 import { Providers } from './providers';
@@ -12,7 +12,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: { default: `${b.platformName} - Online Admission System`, template: `%s | ${b.platformName}` },
     description: `${b.tagline} Find programs, apply online with verified marks and follow your admission in one place.`,
-    icons: b.faviconUrl ? { icon: b.faviconUrl } : undefined,
+    icons: { icon: b.faviconUrl || DEFAULT_FAVICON_URL, apple: '/brand/apple-touch-icon.png' },
   };
 }
 

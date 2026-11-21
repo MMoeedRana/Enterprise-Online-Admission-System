@@ -2,11 +2,12 @@
 
 import Link from 'next/link';
 import { useBrand } from '@/features/branding/brand-context';
+import { logoFor } from '@/lib/brand';
 import { cn } from '@/lib/utils';
 
 export function LogoMark({ className, src, name }: { className?: string; src?: string; name?: string }) {
   const brand = useBrand();
-  const url = src ?? brand.logoUrl;
+  const url = src ?? logoFor(brand);
   if (url)
     // eslint-disable-next-line @next/next/no-img-element
     return <img src={url} alt="" className={cn('size-9 shrink-0 rounded-xl object-contain', className)} />;
