@@ -1,6 +1,6 @@
 # ADMITRA – Screenshots
 
-Real screenshots of every screen, taken from the running application with the demonstration data (`npm run seed:demo`) on 20 November 2026 (updated after Phase 5: Mitra, branding and RIT's own colors).
+Real screenshots of every screen, taken from the running application with the demonstration data (`npm run seed:demo`) on 20 November 2026 (updated after Phase 5: Mitra, branding and RIT's own colors) and on 21 November 2026 (subscriptions, trials and billing).
 
 - `desktop/` – laptop screen of 1440 × 900 px, exactly what is visible on the screen
 - `mobile/` – iPhone 13 screen (390 px wide), exactly what is visible on the screen
@@ -88,6 +88,9 @@ Accounts used: public pages without login; applicant Ayesha Noor (Hamza Ali for 
 | Mitra chat with a prepared action (institution) | [desktop](desktop/66-mitra-chat.jpg) | [mobile](mobile/66-mitra-chat.jpg) |
 | Mitra answering from the institution's data | [desktop](desktop/86-mitra-payments.jpg) | [mobile](mobile/86-mitra-payments.jpg) |
 | Mitra exporting a list to Excel (institution) | [desktop](desktop/87-mitra-export.jpg) | [mobile](mobile/87-mitra-export.jpg) |
+| Trial banner with the days left | [desktop](desktop/90-trial-banner.jpg) | [mobile](mobile/90-trial-banner.jpg) |
+| Billing: plan, payment accounts and payment proof | [desktop](desktop/91-institution-billing.jpg) | [mobile](mobile/91-institution-billing.jpg) |
+| Workspace locked after the trial | [desktop](desktop/92-trial-ended.jpg) | [mobile](mobile/92-trial-ended.jpg) |
 
 ## Super Admin
 
@@ -109,6 +112,9 @@ Accounts used: public pages without login; applicant Ayesha Noor (Hamza Ali for 
 | Mitra daily briefing (platform) | [desktop](desktop/81-mitra-briefing.jpg) | [mobile](mobile/81-mitra-briefing.jpg) |
 | Mitra chat (platform) | [desktop](desktop/80-mitra-chat.jpg) | [mobile](mobile/80-mitra-chat.jpg) |
 | Mitra greeting and small talk (platform) | [desktop](desktop/85-mitra-greeting.jpg) | [mobile](mobile/85-mitra-greeting.jpg) |
+| Billing: payments to verify (Super Admin) | [desktop](desktop/93-platform-billing.jpg) | [mobile](mobile/93-platform-billing.jpg) |
+| Billing: payment accounts (bank, JazzCash, Easypaisa) | [desktop](desktop/88-platform-payment-accounts.jpg) | [mobile](mobile/88-platform-payment-accounts.jpg) |
+| Give a trial with chosen features | [desktop](desktop/89-give-trial.jpg) | [mobile](mobile/89-give-trial.jpg) |
 
 ## Dark theme
 

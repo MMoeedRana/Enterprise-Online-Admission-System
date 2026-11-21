@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Check, Copy, Eye, Landmark, Lock, Send, Smartphone, Sparkles, X } from 'lucide-react';
+import { Check, Copy, Eye, Landmark, Lock, Send, Smartphone, X } from 'lucide-react';
 import { useState } from 'react';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -230,7 +230,6 @@ export function InstitutionBilling() {
                       <X className="size-4" />
                     )}
                     {labels[k].label}
-                    {k === 'aiCopilot' && !b.plan.features[k] && s.isTrial && <Sparkles className="size-3.5" />}
                   </li>
                 ))}
               </ul>
