@@ -1,7 +1,6 @@
 'use client';
 
-import { ChevronsUpDown } from 'lucide-react';
-import type { ReactNode } from 'react';
+import type { ChangeEvent, ReactNode } from 'react';
 import { StaffShell } from '@/components/layout/staff-shell';
 import { useAuth } from '@/features/auth/auth-context';
 import { InstitutionBrandStyle } from '@/features/branding/brand-style';
@@ -9,6 +8,7 @@ import { MitraLauncher } from '@/features/mitra/launcher';
 import { STAFF_ROLES } from '@/lib/constants';
 import { institutionNav } from './nav';
 import { SubscriptionBanner } from './subscription-banner';
+import { Select } from '@/components/ui/input';
 
 function InstitutionSwitcher() {
   const { memberships, current, selectInstitution } = useAuth();
@@ -19,18 +19,18 @@ function InstitutionSwitcher() {
   return (
     <label className="relative hidden sm:block">
       <span className="sr-only">Institution</span>
-      <select
+      <Select
         value={current.institutionId}
-        onChange={(e) => selectInstitution(e.target.value)}
-        className="border-line bg-card text-ink h-10 appearance-none rounded-xl border pr-9 pl-3 text-[14px] font-semibold outline-none"
+        onChange={(e: ChangeEvent<HTMLSelectElement>) => selectInstitution(e.target.value)}
+        className="w-[210px]"
+        aria-label="Institution"
       >
         {memberships.map((m) => (
           <option key={m.institutionId} value={m.institutionId}>
             {m.name}
           </option>
         ))}
-      </select>
-      <ChevronsUpDown className="text-muted pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2" />
+      </Select>
     </label>
   );
 }
@@ -51,7 +51,6 @@ export function InstitutionShell({ children }: { children: ReactNode }) {
         roleLabel={role ?? 'Staff'}
         orgName={current?.name ?? ''}
         headerExtra={<InstitutionSwitcher />}
-        search={{ placeholder: 'Search programs...', href: (q) => `/institution/programs?q=${encodeURIComponent(q)}` }}
         banner={<SubscriptionBanner />}
         assistant={
           current?.ai?.copilot && current.permissions.includes('ai.copilot') ? (

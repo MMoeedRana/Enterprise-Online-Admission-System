@@ -13,10 +13,6 @@ export function PlatformShell({ children }: { children: ReactNode }) {
       sections={platformNav}
       roleLabel="Super Admin"
       orgName={`${brand.platformName} Platform`}
-      search={{
-        placeholder: 'Search institutions...',
-        href: (q) => `/platform/institutions?q=${encodeURIComponent(q)}`,
-      }}
       assistant={<MitraLauncher scope="platform" />}
     >
       {children}

@@ -83,7 +83,7 @@ export default async function HomePage() {
                   <input
                     name="q"
                     placeholder="Search a program or institution..."
-                    className="h-[52px] w-full rounded-xl bg-white pr-12 pl-4 text-[15px] text-slate-900 outline-none placeholder:text-slate-400 focus:ring-4 focus:ring-blue-400/40"
+                    className="h-[52px] w-full rounded-xl border border-slate-200 bg-white pr-12 pl-4 text-[15px] text-slate-900 outline-none placeholder:text-slate-400 transition focus:border-primary focus:ring-1 focus:ring-[var(--ring)]"
                   />
                   <Search className="pointer-events-none absolute top-1/2 right-4 size-5 -translate-y-1/2 text-slate-400" />
                 </label>

@@ -31,10 +31,12 @@ export async function refreshSession(): Promise<Session | null> {
     .post<{ data: Session }>('/api/v1/auth/refresh', {}, { withCredentials: true })
     .then((r) => {
       setAccessToken(r.data.data.accessToken);
+      onSessionChange?.(r.data.data);
       return r.data.data;
     })
     .catch(() => {
       setAccessToken(null);
+      onSessionChange?.(null);
       return null;
     })
     .finally(() => {

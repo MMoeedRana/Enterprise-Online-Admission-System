@@ -266,11 +266,8 @@ export function MitraPage({ scope }: { scope: Scope }) {
   return (
     <>
       <PageHeader
-        title={
-          <span className="flex items-center gap-3">
-            <MitraAvatar className="size-10" /> {brand.agentName}
-          </span>
-        }
+        title={brand.agentName}
+        subtitleClassName="hidden sm:block"
         subtitle={
           scope === 'platform'
             ? `Your admission operations copilot for the whole ${brand.platformName} platform`
@@ -280,6 +277,7 @@ export function MitraPage({ scope }: { scope: Scope }) {
           <Tabs
             value={tab}
             onChange={setTab}
+            className="w-full [&>button]:h-8 [&>button]:px-3 [&>button]:text-[12px]"
             tabs={[
               { value: 'ask', label: `Ask ${brand.agentName}` },
               { value: 'briefing', label: 'Briefing' },

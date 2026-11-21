@@ -2,7 +2,19 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Check, Loader2, MessageSquarePlus, Send, Sparkles, Trash2, X } from 'lucide-react';
+import {
+  Check,
+  History,
+  Loader2,
+  MessageSquarePlus,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Search,
+  Send,
+  Sparkles,
+  Trash2,
+  X,
+} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -90,6 +102,9 @@ export function ChatPanel({ scope, compact = false }: { scope: Scope; compact?: 
   const qc = useQueryClient();
   const brand = useBrand();
   const { user } = useAuth();
+  const [desktopHistoryOpen, setDesktopHistoryOpen] = useState(true);
+  const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
+  const [conversationSearch, setConversationSearch] = useState('');
   const status = useQuery({
     queryKey: ['mitra', scope, 'status'],
     queryFn: () => get<AgentStatus>(`${base(scope)}/status`),
@@ -160,54 +175,238 @@ export function ChatPanel({ scope, compact = false }: { scope: Scope; compact?: 
   const messages = conv.data?.messages ?? [];
   const actions = conv.data?.actions ?? [];
   const empty = !activeId && !live;
+  const filteredConversations = (list.data ?? []).filter((conversation) =>
+    conversation.title.toLowerCase().includes(conversationSearch.trim().toLowerCase()),
+  );
 
   return (
-    <div className={cn('grid min-h-0 gap-4', !compact && 'lg:grid-cols-[260px_1fr]')}>
+    <div
+      className={cn(
+        'relative grid min-h-0 gap-4',
+        !compact && desktopHistoryOpen && 'lg:grid-cols-[260px_minmax(0,1fr)]',
+        !compact && !desktopHistoryOpen && 'lg:grid-cols-[56px_minmax(0,1fr)]',
+      )}
+    >
       {!compact && (
-        <aside className="border-line bg-card hidden min-h-0 flex-col rounded-[var(--radius-card)] border p-3 shadow-[var(--shadow-card)] lg:flex">
-          <Button
-            variant="soft"
-            className="w-full"
-            icon={<MessageSquarePlus className="size-4" />}
-            onClick={() => setActiveId(null)}
-          >
-            New conversation
-          </Button>
-          <p className="text-muted mt-4 mb-2 px-1 text-[11px] font-semibold tracking-wide uppercase">Recent</p>
-          <ul className="-mx-1 max-h-[60vh] space-y-0.5 overflow-y-auto">
-            {(list.data ?? []).map((c) => (
-              <li key={c._id} className="group flex items-center">
+        <aside
+          className={cn(
+            'border-line bg-card hidden min-h-0 flex-col rounded-[var(--radius-card)] border p-3 shadow-[var(--shadow-card)] lg:flex',
+            'h-[calc(100dvh-190px)] min-h-0 lg:min-h-[620px]',
+            desktopHistoryOpen ? 'items-stretch' : 'items-center',
+          )}
+        >
+          {desktopHistoryOpen ? (
+            <>
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-2 px-1">
+                  <MitraAvatar className="size-8" />
+                  <div className="min-w-0">
+                    <p className="truncate text-[13px] font-bold">Conversation history</p>
+                    <p className="text-muted truncate text-[11px]">ADMITRA · {name}</p>
+                  </div>
+                </div>
                 <button
-                  onClick={() => setActiveId(c._id)}
-                  className={cn(
-                    'min-w-0 flex-1 truncate rounded-lg px-2.5 py-2 text-left text-[13px]',
-                    activeId === c._id ? 'bg-primary-soft text-primary font-semibold' : 'text-body hover:bg-card-soft',
-                  )}
+                  type="button"
+                  aria-label="Collapse conversation history"
+                  onClick={() => setDesktopHistoryOpen(false)}
+                  className="text-muted hover:text-ink hover:bg-card-soft shrink-0 rounded-lg p-2"
                 >
-                  {c.title}
+                  <PanelLeftClose className="size-4" />
                 </button>
-                <button
-                  aria-label={`Delete ${c.title}`}
-                  onClick={() => remove.mutate(c._id)}
-                  className="text-muted hover:text-ink invisible rounded p-1 group-hover:visible focus:visible"
-                >
-                  <Trash2 className="size-3.5" />
-                </button>
-              </li>
-            ))}
-            {!list.data?.length && <li className="text-muted px-2.5 py-2 text-[12.5px]">No conversations yet.</li>}
-          </ul>
+              </div>
+              <Button
+                variant="soft"
+                className="w-full"
+                icon={<MessageSquarePlus className="size-4" />}
+                onClick={() => setActiveId(null)}
+              >
+                New conversation
+              </Button>
+              <label className="relative mt-3 block">
+                <span className="sr-only">Search conversations</span>
+                <Search className="text-muted pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+                <input
+                  value={conversationSearch}
+                  onChange={(event) => setConversationSearch(event.target.value)}
+                  placeholder="Search conversations..."
+                  className="border-line bg-card-soft text-ink placeholder:text-muted focus:border-primary h-10 w-full rounded-xl border pr-3 pl-9 text-[13px] outline-none focus:ring-1 focus:ring-[var(--ring)]"
+                />
+              </label>
+              <p className="text-muted mt-4 mb-2 px-1 text-[11px] font-semibold tracking-[0.12em] uppercase">Recent</p>
+              <ul className="elegant-scrollbar -mx-1 min-h-0 flex-1 space-y-1 overflow-y-auto px-1 pb-2">
+                {filteredConversations.map((c) => (
+                  <li key={c._id} className="group flex items-center">
+                    <button
+                      onClick={() => setActiveId(c._id)}
+                      className={cn(
+                        'min-w-0 flex-1 truncate rounded-xl px-3 py-2.5 text-left text-[13px] transition',
+                        activeId === c._id
+                          ? 'bg-primary-soft text-primary font-semibold shadow-[0_4px_14px_var(--ring)]'
+                          : 'text-body hover:bg-card-soft',
+                      )}
+                    >
+                      {c.title}
+                    </button>
+                    <button
+                      aria-label={`Delete ${c.title}`}
+                      onClick={() => remove.mutate(c._id)}
+                      className="text-muted hover:text-danger invisible rounded-lg p-2 group-hover:visible focus:visible"
+                    >
+                      <Trash2 className="size-3.5" />
+                    </button>
+                  </li>
+                ))}
+                {!filteredConversations.length && (
+                  <li className="text-muted rounded-xl px-3 py-4 text-center text-[12.5px]">
+                    {conversationSearch.trim() ? 'No matching conversations.' : 'No conversations yet.'}
+                  </li>
+                )}
+              </ul>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                aria-label="Expand conversation history"
+                title="Conversation history"
+                onClick={() => setDesktopHistoryOpen(true)}
+                className="hover:bg-card-soft text-muted hover:text-primary rounded-xl p-2.5"
+              >
+                <MitraAvatar className="size-8" />
+              </button>
+              <button
+                type="button"
+                aria-label="Expand conversation history"
+                onClick={() => setDesktopHistoryOpen(true)}
+                className="text-muted hover:text-primary hover:bg-primary-soft mt-2 rounded-xl p-2.5"
+              >
+                <PanelLeftOpen className="size-4" />
+              </button>
+              <button
+                type="button"
+                aria-label="New conversation"
+                onClick={() => setActiveId(null)}
+                className="text-muted hover:text-primary hover:bg-primary-soft mt-2 rounded-xl p-2.5"
+              >
+                <MessageSquarePlus className="size-4" />
+              </button>
+            </>
+          )}
         </aside>
       )}
 
       <section
         className={cn(
-          'border-line bg-card flex min-h-0 flex-col rounded-[var(--radius-card)] border shadow-[var(--shadow-card)]',
-          compact ? 'h-full rounded-none border-0 shadow-none' : 'h-[calc(100dvh-230px)] min-h-[520px]',
+          'border-line bg-card relative flex min-h-0 overflow-hidden flex-col rounded-[var(--radius-card)] border shadow-[var(--shadow-card)]',
+          compact
+            ? 'h-full rounded-none border-0 shadow-none'
+            : 'h-[calc(100dvh-96px)] min-h-0 lg:h-[calc(100dvh-190px)] lg:min-h-[620px]',
         )}
       >
+        {mobileHistoryOpen && (
+          <motion.div
+            className="absolute inset-x-0 top-[61px] bottom-0 z-40 sm:top-[73px] lg:hidden"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <button
+              type="button"
+              aria-label="Close conversation history"
+              className="absolute inset-0 bg-slate-950/35 backdrop-blur-[1px]"
+              onClick={() => setMobileHistoryOpen(false)}
+            />
+            <motion.aside
+              className="border-line bg-card absolute inset-y-0 left-0 flex w-[min(82vw,320px)] flex-col border-r p-4 shadow-2xl"
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', stiffness: 360, damping: 34 }}
+            >
+              <div className="mb-4 flex items-center justify-between">
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <MitraAvatar />
+                  <div className="min-w-0">
+                    <p className="truncate text-[14px] font-bold">Conversation history</p>
+                    <p className="text-muted truncate text-[11.5px]">ADMITRA · {name}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  aria-label="Close conversation history"
+                  onClick={() => setMobileHistoryOpen(false)}
+                  className="text-muted hover:text-ink hover:bg-card-soft shrink-0 rounded-xl p-2"
+                >
+                  <X className="size-5" />
+                </button>
+              </div>
+              <Button
+                variant="soft"
+                className="w-full"
+                icon={<MessageSquarePlus className="size-4" />}
+                onClick={() => {
+                  setActiveId(null);
+                  setMobileHistoryOpen(false);
+                }}
+              >
+                New conversation
+              </Button>
+              <label className="relative mt-3 block">
+                <span className="sr-only">Search conversations</span>
+                <Search className="text-muted pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+                <input
+                  value={conversationSearch}
+                  onChange={(event) => setConversationSearch(event.target.value)}
+                  placeholder="Search conversations..."
+                  className="border-line bg-card-soft text-ink placeholder:text-muted focus:border-primary h-10 w-full rounded-xl border pr-3 pl-9 text-[13px] outline-none focus:ring-1 focus:ring-[var(--ring)]"
+                />
+              </label>
+              <p className="text-muted mt-4 mb-2 px-1 text-[11px] font-semibold tracking-[0.12em] uppercase">
+                Recent
+              </p>
+              <ul className="elegant-scrollbar -mx-1 min-h-0 flex-1 space-y-1 overflow-y-auto px-1 pb-2">
+                {filteredConversations.map((c) => (
+                  <li key={c._id} className="group flex items-center">
+                    <button
+                      onClick={() => {
+                        setActiveId(c._id);
+                        setMobileHistoryOpen(false);
+                      }}
+                      className={cn(
+                        'min-w-0 flex-1 truncate rounded-xl px-3 py-2.5 text-left text-[13px]',
+                        activeId === c._id
+                          ? 'bg-primary-soft text-primary font-semibold'
+                          : 'text-body hover:bg-card-soft',
+                      )}
+                    >
+                      {c.title}
+                    </button>
+                    <button
+                      aria-label={`Delete ${c.title}`}
+                      onClick={() => remove.mutate(c._id)}
+                      className="text-muted hover:text-danger invisible rounded-lg p-2 group-hover:visible focus:visible"
+                    >
+                      <Trash2 className="size-3.5" />
+                    </button>
+                  </li>
+                ))}
+                {!list.data?.length && (
+                  <li className="text-muted rounded-xl px-3 py-4 text-center text-[12.5px]">No conversations yet.</li>
+                )}
+              </ul>
+            </motion.aside>
+          </motion.div>
+        )}
         <div className="border-line flex items-center justify-between gap-3 border-b px-4 py-3 sm:px-5">
           <div className="flex min-w-0 items-center gap-3">
+            <button
+              type="button"
+              aria-label="Open conversation history"
+              onClick={() => setMobileHistoryOpen(true)}
+              className="border-line bg-card-soft text-muted hover:text-primary flex size-9 shrink-0 items-center justify-center rounded-xl border lg:hidden"
+            >
+              <History className="size-[17px]" />
+            </button>
             <MitraAvatar />
             <div className="min-w-0">
               <p className="text-ink truncate text-[15px] font-bold">
@@ -231,7 +430,10 @@ export function ChatPanel({ scope, compact = false }: { scope: Scope; compact?: 
           )}
         </div>
 
-        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-5 sm:px-5" aria-live="polite">
+        <div
+          className="elegant-scrollbar min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-5 sm:px-5 lg:px-7"
+          aria-live="polite"
+        >
           {s && !s.available && <Alert tone="info">{s.reason}</Alert>}
           {s && s.available && !s.configured && (
             <Alert tone="info">
@@ -241,12 +443,12 @@ export function ChatPanel({ scope, compact = false }: { scope: Scope; compact?: 
             </Alert>
           )}
           {empty && (
-            <div className="mx-auto max-w-2xl py-6 text-center">
+            <div className="mx-auto max-w-3xl py-8 text-center lg:py-12">
               <MitraAvatar className="mx-auto size-14" />
-              <h2 className="mt-4 text-[20px] font-bold">
+              <h2 className="mt-5 text-[22px] font-bold sm:text-[24px]">
                 Hello{user ? `, ${user.fullName.split(' ')[0]}` : ''}. I am {name}.
               </h2>
-              <p className="text-muted mt-1 text-[14px]">
+              <p className="text-muted mt-2 text-[15px] leading-6">
                 {scope === 'platform'
                   ? 'Ask about institutions, fees, applications, payments, tickets or anything unusual on the platform.'
                   : 'Ask about your applications, payments, merit lists, seats and alerts. I can also prepare reminders for you to confirm.'}
@@ -270,7 +472,7 @@ export function ChatPanel({ scope, compact = false }: { scope: Scope; compact?: 
             messages.map((m) =>
               m.role === 'user' ? (
                 <div key={m._id} className="flex justify-end gap-3">
-                  <div className="bg-primary max-w-[85%] rounded-2xl rounded-tr-md px-4 py-2.5 text-[14px] whitespace-pre-wrap text-white">
+                  <div className="bg-primary max-w-[78%] rounded-2xl rounded-tr-md px-4 py-3 text-[15px] leading-6 whitespace-pre-wrap text-white shadow-[0_8px_22px_var(--ring)] sm:max-w-[72%]">
                     {m.content}
                   </div>
                   {user && (
@@ -284,7 +486,7 @@ export function ChatPanel({ scope, compact = false }: { scope: Scope; compact?: 
                     {m.content && (
                       <div
                         className={cn(
-                          'text-ink rounded-2xl rounded-tl-md px-4 py-2.5',
+                          'text-ink rounded-2xl rounded-tl-md px-4 py-3 text-[15px] leading-6 shadow-[0_4px_16px_rgba(15,23,42,0.06)]',
                           m.actionId ? 'bg-card-soft text-[13px]' : 'bg-card-soft',
                         )}
                       >
@@ -309,14 +511,14 @@ export function ChatPanel({ scope, compact = false }: { scope: Scope; compact?: 
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3">
                 {!messages.some((m) => m.content === live.question) && (
                   <div className="flex justify-end">
-                    <div className="bg-primary max-w-[85%] rounded-2xl rounded-tr-md px-4 py-2.5 text-[14px] whitespace-pre-wrap text-white">
+                    <div className="bg-primary max-w-[78%] rounded-2xl rounded-tr-md px-4 py-3 text-[15px] leading-6 whitespace-pre-wrap text-white shadow-[0_8px_22px_var(--ring)]">
                       {live.question}
                     </div>
                   </div>
                 )}
                 <div className="flex gap-3">
                   <MitraAvatar className="size-8" />
-                  <div className="bg-card-soft text-body rounded-2xl rounded-tl-md px-4 py-3 text-[13px]">
+                  <div className="bg-card-soft text-body rounded-2xl rounded-tl-md px-4 py-3 text-[14px] leading-6">
                     {live.steps.length ? (
                       <ul className="space-y-1">
                         {live.steps.map((st, k) => (
@@ -367,7 +569,7 @@ export function ChatPanel({ scope, compact = false }: { scope: Scope; compact?: 
                 void send(text);
               }
             }}
-            className="border-line bg-card text-ink placeholder:text-muted focus:border-primary max-h-40 min-h-11 flex-1 resize-none rounded-xl border px-3.5 py-2.5 text-[14px] outline-none focus:ring-4 focus:ring-[var(--ring)]"
+            className="elegant-scrollbar border-line bg-card text-ink placeholder:text-muted focus:border-primary max-h-40 min-h-12 flex-1 resize-none rounded-2xl border px-4 py-3 text-[15px] leading-6 outline-none focus:ring-1 focus:ring-[var(--ring)]"
           />
           <Button
             type="submit"

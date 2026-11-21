@@ -17,7 +17,7 @@
   --navy: #0b1b3a;
   --navy-2: #13306b;
   --navy-line: #1c2c52;
-  --ring: rgba(26, 98, 214, 0.35);
+  --ring: rgba(26, 98, 214, 0.18);
 }
 
 .dark {
@@ -35,7 +35,7 @@
   --navy: #070f22;
   --navy-2: #0f2350;
   --navy-line: #18264a;
-  --ring: rgba(59, 130, 246, 0.45);
+  --ring: rgba(59, 130, 246, 0.24);
 }
 
 @theme inline {
@@ -121,6 +121,34 @@
 }
 .no-scrollbar {
   scrollbar-width: none;
+}
+
+/* Scrollbars stay hidden until the user actually scrolls. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+*.is-scrolling {
+  scrollbar-color: var(--primary) transparent;
+  scrollbar-width: thin;
+}
+*::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+*::-webkit-scrollbar-track,
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+*.is-scrolling::-webkit-scrollbar-thumb {
+  background: var(--primary);
+  border: 1px solid transparent;
+  background-clip: padding-box;
 }
 
 .hero-gradient {

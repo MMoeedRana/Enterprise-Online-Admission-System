@@ -16,8 +16,23 @@ export async function streamMessage(url: string, message: string, onEvent: (e: S
       },
       body: JSON.stringify({ message }),
     });
-  let res = await call();
-  if (res.status === 401 && (await refreshSession())) res = await call();
+  let res: Response;
+  if (!getAccessToken()) {
+    const session = await refreshSession();
+    if (!session) {
+      onEvent({ type: 'error', message: 'Your session has expired. Please sign in again.' });
+      return;
+    }
+  }
+  res = await call();
+  if (res.status === 401) {
+    const session = await refreshSession();
+    if (!session) {
+      onEvent({ type: 'error', message: 'Your session has expired. Please sign in again.' });
+      return;
+    }
+    res = await call();
+  }
   if (!res.ok || !res.body) {
     let msg = 'The message could not be sent.';
     try {

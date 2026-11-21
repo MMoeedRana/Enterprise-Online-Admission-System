@@ -1,20 +1,28 @@
+ 'use client';
+
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { ChevronRight } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { cn } from '@/lib/utils';
 
 export function PageHeader({
   title,
   subtitle,
   actions,
   crumbs,
+  subtitleClassName,
 }: {
   title: ReactNode;
   subtitle?: ReactNode;
   actions?: ReactNode;
   crumbs?: { label: string; href?: string }[];
+  subtitleClassName?: string;
 }) {
+  const pathname = usePathname();
+  if (pathname.startsWith('/platform/') || pathname.startsWith('/institution/')) return null;
   return (
-    <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
       <div className="min-w-0">
         {crumbs && (
           <nav aria-label="Breadcrumb" className="text-muted mb-2 flex flex-wrap items-center gap-1 text-[12.5px]">
@@ -33,7 +41,7 @@ export function PageHeader({
           </nav>
         )}
         <h1 className="text-[22px] leading-tight font-bold tracking-tight">{title}</h1>
-        {subtitle && <p className="text-muted mt-1 text-[13.5px]">{subtitle}</p>}
+        {subtitle && <p className={cn('text-muted mt-1 text-[13.5px]', subtitleClassName)}>{subtitle}</p>}
       </div>
       {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
     </div>
