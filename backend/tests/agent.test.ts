@@ -79,7 +79,7 @@ describe('provider layer (AGENT-1)', () => {
       'gemini',
       'https://generativelanguage.googleapis.com/v1beta/openai',
       'KEY',
-      'gemini-2.5-flash',
+      'gemini-3-flash-preview',
     );
     const r = await p.chat({ messages: [{ role: 'user', content: 'hi' }], tools: [toolSpec(ALL_TOOLS[0]!)] });
     expect(r.toolCalls).toEqual([{ id: 'c1', name: 'get_overview', args: { days: 1 } }]);
@@ -87,7 +87,7 @@ describe('provider layer (AGENT-1)', () => {
     expect(url).toBe('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions');
     expect((init.headers as Record<string, string>).Authorization).toBe('Bearer KEY');
     const body = JSON.parse(String(init.body));
-    expect(body.model).toBe('gemini-2.5-flash');
+    expect(body.model).toBe('gemini-3-flash-preview');
     expect(body.tools[0].function.name).toBe('get_overview');
     expect(body.tools[0].function.parameters.$schema).toBeUndefined();
   });

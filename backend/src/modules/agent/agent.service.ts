@@ -78,7 +78,7 @@ function systemPrompt(ctx: AgentContext) {
 function toWire(m: {
   role: string;
   content: string;
-  toolCalls?: { id: string; name: string; args: unknown }[];
+  toolCalls?: { id: string; name: string; args: unknown; thoughtSignature?: string }[];
   toolCallId?: string;
   name?: string;
 }): ChatMessage {
@@ -92,6 +92,7 @@ function toWire(m: {
         id: t.id,
         name: t.name,
         args: (t.args ?? {}) as Record<string, unknown>,
+        thoughtSignature: t.thoughtSignature,
       })),
     };
   return { role: 'user', content: m.content };

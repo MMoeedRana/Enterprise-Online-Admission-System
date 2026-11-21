@@ -6,6 +6,7 @@ interface OpenAIMessage {
   tool_calls?: { id: string; type: 'function'; function: { name: string; arguments: string } }[];
   tool_call_id?: string;
   name?: string;
+  extra_content?: { google?: { thought_signature?: string } };
 }
 
 export class OpenAICompatibleProvider implements ChatProvider {
@@ -23,6 +24,9 @@ export class OpenAICompatibleProvider implements ChatProvider {
       return {
         role: 'assistant',
         content: m.content || null,
+        ...(m.toolCalls?.length && m.toolCalls[0]?.thoughtSignature
+          ? { extra_content: { google: { thought_signature: m.toolCalls[0].thoughtSignature } } }
+          : {}),
         ...(m.toolCalls?.length
           ? {
               tool_calls: m.toolCalls.map((t) => ({
@@ -69,12 +73,14 @@ export class OpenAICompatibleProvider implements ChatProvider {
     };
     const msg = data.choices?.[0]?.message;
     if (!msg) throw new ProviderError(`${this.name} returned no answer.`);
+    const thoughtSignature = msg.extra_content?.google?.thought_signature;
     return {
       content: msg.content ?? '',
       toolCalls: (msg.tool_calls ?? []).map((t, i) => ({
         id: t.id || `call_${i}`,
         name: t.function.name,
         args: safeJson(t.function.arguments),
+        thoughtSignature,
       })),
       usage: {
         inputTokens: data.usage?.prompt_tokens ?? 0,

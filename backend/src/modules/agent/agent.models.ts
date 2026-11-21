@@ -7,7 +7,15 @@ const messageSchema = new Schema(
   {
     role: { type: String, enum: ['user', 'assistant', 'tool'], required: true },
     content: { type: String, default: '' },
-    toolCalls: [{ _id: false, id: String, name: String, args: Schema.Types.Mixed }],
+    toolCalls: [
+      {
+        _id: false,
+        id: String,
+        name: String,
+        args: Schema.Types.Mixed,
+        thoughtSignature: { type: String, default: '' },
+      },
+    ],
     toolCallId: { type: String, default: '' },
     name: { type: String, default: '' },
     actionId: { type: Types.ObjectId, default: null },
