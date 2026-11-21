@@ -4,6 +4,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Check,
+  Copy,
+  Download,
+  FileSpreadsheet,
+  FileText,
   History,
   Loader2,
   MessageSquarePlus,
@@ -24,17 +28,95 @@ import { Avatar } from '@/components/layout/user-menu';
 import { useAuth } from '@/features/auth/auth-context';
 import { useBrand } from '@/features/branding/brand-context';
 import { del, errorMessage, get, post } from '@/lib/api';
+import { downloadFile } from '@/lib/files';
 import { cn } from '@/lib/utils';
 import { Markdown } from './markdown';
 import { streamMessage } from './stream';
 import {
   base,
   type AgentAction,
+  type AgentFile,
   type AgentStatus,
   type Conversation,
   type ConversationSummary,
   type Scope,
 } from './types';
+
+const FORMAT_LABEL: Record<AgentFile['format'], string> = { xlsx: 'Excel', pdf: 'PDF', csv: 'CSV' };
+
+function FileCard({ file, scope }: { file: AgentFile; scope: Scope }) {
+  const [busy, setBusy] = useState(false);
+  const Icon = file.format === 'pdf' ? FileText : FileSpreadsheet;
+  return (
+    <div className="border-line bg-card mt-2 flex items-center gap-3 rounded-xl border px-3.5 py-3">
+      <span className="bg-primary-soft text-primary flex size-10 shrink-0 items-center justify-center rounded-lg">
+        <Icon className="size-5" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-ink truncate text-[13.5px] font-semibold">{file.name}</p>
+        <p className="text-muted text-[12px]">
+          {FORMAT_LABEL[file.format]} · {file.rows} row{file.rows === 1 ? '' : 's'}
+        </p>
+      </div>
+      <Button
+        size="sm"
+        variant="secondary"
+        loading={busy}
+        onClick={async () => {
+          setBusy(true);
+          await downloadFile(`${base(scope)}/exports/${file._id}`, file.name);
+          setBusy(false);
+        }}
+      >
+        <Download className="size-4" /> Download
+      </Button>
+    </div>
+  );
+}
+
+function plainText(md: string) {
+  return md
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/(^|\s)\*(\S.*?)\*(?=\s|$)/g, '$1$2')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/^\|?\s*-{3,}.*$/gm, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function CopyButton({ text }: { text: string }) {
+  const [done, setDone] = useState(false);
+  const copy = async () => {
+    const value = plainText(text);
+    try {
+      await navigator.clipboard.writeText(value);
+    } catch {
+      const area = document.createElement('textarea');
+      area.value = value;
+      area.style.position = 'fixed';
+      area.style.opacity = '0';
+      document.body.appendChild(area);
+      area.select();
+      document.execCommand('copy');
+      area.remove();
+    }
+    setDone(true);
+    toast.success('Copied to clipboard');
+    setTimeout(() => setDone(false), 1500);
+  };
+  return (
+    <button
+      type="button"
+      onClick={() => void copy()}
+      aria-label="Copy response"
+      title="Copy response"
+      className="text-muted hover:text-primary hover:bg-primary-soft mt-1 inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1 text-[12px] transition"
+    >
+      {done ? <Check className="size-3.5 text-green-700 dark:text-green-400" /> : <Copy className="size-3.5" />}
+      {done ? 'Copied' : 'Copy'}
+    </button>
+  );
+}
 
 export function MitraAvatar({ className = 'size-9' }: { className?: string }) {
   return (
@@ -297,7 +379,7 @@ export function ChatPanel({ scope, compact = false }: { scope: Scope; compact?: 
 
       <section
         className={cn(
-          'border-line bg-card relative flex min-h-0 overflow-hidden flex-col rounded-[var(--radius-card)] border shadow-[var(--shadow-card)]',
+          'border-line bg-card relative flex min-h-0 flex-col overflow-hidden rounded-[var(--radius-card)] border shadow-[var(--shadow-card)]',
           compact
             ? 'h-full rounded-none border-0 shadow-none'
             : 'h-[calc(100dvh-96px)] min-h-0 lg:h-[calc(100dvh-190px)] lg:min-h-[620px]',
@@ -361,9 +443,7 @@ export function ChatPanel({ scope, compact = false }: { scope: Scope; compact?: 
                   className="border-line bg-card-soft text-ink placeholder:text-muted focus:border-primary h-10 w-full rounded-xl border pr-3 pl-9 text-[13px] outline-none focus:ring-1 focus:ring-[var(--ring)]"
                 />
               </label>
-              <p className="text-muted mt-4 mb-2 px-1 text-[11px] font-semibold tracking-[0.12em] uppercase">
-                Recent
-              </p>
+              <p className="text-muted mt-4 mb-2 px-1 text-[11px] font-semibold tracking-[0.12em] uppercase">Recent</p>
               <ul className="elegant-scrollbar -mx-1 min-h-0 flex-1 space-y-1 overflow-y-auto px-1 pb-2">
                 {filteredConversations.map((c) => (
                   <li key={c._id} className="group flex items-center">
@@ -493,6 +573,10 @@ export function ChatPanel({ scope, compact = false }: { scope: Scope; compact?: 
                         <Markdown text={m.content} />
                       </div>
                     )}
+                    {m.content && !m.actionId && <CopyButton text={m.content} />}
+                    {m.files?.map((f) => (
+                      <FileCard key={f._id} file={f} scope={scope} />
+                    ))}
                   </div>
                 </div>
               ),
