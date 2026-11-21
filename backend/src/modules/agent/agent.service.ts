@@ -185,10 +185,14 @@ export async function runTurn(
     } catch (err) {
       logger.warn({ err }, 'AI provider error');
       const busy = err instanceof ProviderError && err.status === 429;
+      const detail =
+        ctx.scope === 'PLATFORM' && err instanceof Error
+          ? ` (${err.message.replace(/\s+/g, ' ').slice(0, 220)})`
+          : '';
       return finish(
         busy
           ? 'The AI service is busy right now (its rate limit was reached). Please try again in a minute.'
-          : 'I could not reach the AI service. Please try again in a moment.',
+          : `I could not reach the AI service. Please try again in a moment.${detail}`,
       );
     }
     await useQuota(ctx.userId, { input: result.usage.inputTokens, output: result.usage.outputTokens });

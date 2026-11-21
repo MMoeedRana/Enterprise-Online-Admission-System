@@ -92,6 +92,75 @@ describe('provider layer (AGENT-1)', () => {
     expect(body.tools[0].function.parameters.$schema).toBeUndefined();
   });
 
+  it('sends Gemini thought signatures back with the tool calls of the next request', async () => {
+    const replies = [
+      {
+        choices: [
+          {
+            message: {
+              content: null,
+              tool_calls: [
+                {
+                  id: 'g1',
+                  type: 'function',
+                  function: { name: 'get_overview', arguments: '{}' },
+                  extra_content: { google: { thought_signature: 'SIG-A' } },
+                },
+                { id: 'g2', type: 'function', function: { name: 'list_institutions', arguments: '{}' } },
+              ],
+            },
+          },
+        ],
+      },
+      { choices: [{ message: { content: 'Here is the overview.' } }] },
+    ];
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify(replies.shift()), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    setProvider(
+      new OpenAICompatibleProvider(
+        'gemini',
+        'https://generativelanguage.googleapis.com/v1beta/openai',
+        'k',
+        'gemini-3-flash-preview',
+      ),
+    );
+    const root = await superAdminToken();
+    const c = await api().post('/api/v1/platform/agent/conversations').set('Authorization', `Bearer ${root}`);
+    const r = await api()
+      .post(`/api/v1/platform/agent/conversations/${c.body.data._id}/messages`)
+      .set('Authorization', `Bearer ${root}`)
+      .send({ message: 'Give me the overview' });
+    expect(r.body.data.message.content).toBe('Here is the overview.');
+    const second = JSON.parse(String((fetchMock.mock.calls[1] as unknown as [string, RequestInit])[1].body));
+    const assistant = second.messages.find((m: { role: string }) => m.role === 'assistant');
+    expect(assistant.tool_calls[0].extra_content).toEqual({ google: { thought_signature: 'SIG-A' } });
+    expect(assistant.tool_calls[1].extra_content).toBeUndefined();
+    expect(second.messages.filter((m: { role: string }) => m.role === 'tool')).toHaveLength(2);
+    const saved = await ConversationModel.findById(c.body.data._id).lean();
+    expect(saved!.messages.find((m) => m.role === 'assistant')!.toolCalls[0]!.thoughtSignature).toBe('SIG-A');
+  });
+
+  it('adds the documented placeholder signature for Gemini when an older tool call has none', async () => {
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(JSON.stringify({ choices: [{ message: { content: 'ok' } }] }), { status: 200 }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const p = new OpenAICompatibleProvider('gemini', 'https://x.test', 'k', 'gemini-3-flash-preview');
+    await p.chat({
+      messages: [
+        { role: 'user', content: 'q' },
+        { role: 'assistant', content: '', toolCalls: [{ id: 'a', name: 'get_overview', args: {} }] },
+        { role: 'tool', toolCallId: 'a', name: 'get_overview', content: '{}' },
+      ],
+      tools: [],
+    });
+    const body = JSON.parse(String((fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body));
+    expect(body.messages[1].tool_calls[0].extra_content.google.thought_signature).toBe(
+      'skip_thought_signature_validator',
+    );
+  });
+
   it('speaks the Anthropic Messages format for Claude', async () => {
     const fetchMock = vi.fn(
       async () =>
