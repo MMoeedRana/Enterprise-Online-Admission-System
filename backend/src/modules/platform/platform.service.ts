@@ -1,4 +1,4 @@
-import { SubscriptionPaymentModel } from './billing.model';
+import { SubscriptionPaymentModel, type PaymentMethod } from './billing.model';
 import type { Request } from 'express';
 import { env } from '../../config/env';
 import { audit } from '../../lib/audit';
@@ -6,7 +6,13 @@ import { ApiError } from '../../lib/http';
 import { sendMail } from '../../lib/mailer';
 import { slugify } from '../../lib/slug';
 import { createActionToken } from '../auth/auth.service';
-import { InstitutionModel } from '../institutions/institution.model';
+import {
+  DEFAULT_TRIAL_FEATURES,
+  InstitutionModel,
+  TRIAL_FEATURE_KEYS,
+  type TrialFeatures,
+} from '../institutions/institution.model';
+import { notify } from '../notifications/notify';
 import { PlanModel } from '../plans/plan.model';
 import { MemberModel } from '../staff/member.model';
 import { UserModel } from '../users/user.model';
@@ -74,7 +80,13 @@ export async function sendInvitation(
   });
 }
 
-export async function approveInstitution(req: Request, id: string, planId: string, trialDays?: number) {
+export async function approveInstitution(
+  req: Request,
+  id: string,
+  planId: string,
+  trialDays?: number,
+  trialFeatures?: Partial<TrialFeatures>,
+) {
   const inst = await InstitutionModel.findById(id);
   if (!inst) throw ApiError.notFound('Institution');
   if (inst.status !== 'PENDING') throw ApiError.conflict('Only pending requests can be approved.');
@@ -87,7 +99,12 @@ export async function approveInstitution(req: Request, id: string, planId: strin
   inst.status = 'ACTIVE';
   inst.statusReason = '';
   inst.planId = plan._id;
-  inst.subscription = { startsAt: now, endsAt: new Date(now.getTime() + days * DAY), isTrial: true };
+  inst.subscription = {
+    startsAt: now,
+    endsAt: new Date(now.getTime() + days * DAY),
+    isTrial: true,
+    trialFeatures: { ...DEFAULT_TRIAL_FEATURES, ...trialFeatures },
+  };
   inst.approvedAt = now;
   inst.set('approvedBy', req.auth?.userId);
   await inst.save();
@@ -158,7 +175,7 @@ export async function renewSubscription(
   planId?: string,
   payment: {
     amount?: number;
-    method?: 'BANK_TRANSFER' | 'CHEQUE' | 'CASH' | 'ONLINE';
+    method?: PaymentMethod;
     reference?: string;
   } = {},
 ) {
@@ -176,7 +193,12 @@ export async function renewSubscription(
   const from = inst.subscription?.endsAt && inst.subscription.endsAt > now ? inst.subscription.endsAt : now;
   const endsAt = new Date(from);
   endsAt.setMonth(endsAt.getMonth() + months);
-  inst.subscription = { startsAt: inst.subscription?.startsAt ?? now, endsAt, isTrial: false };
+  inst.subscription = {
+    startsAt: inst.subscription?.startsAt ?? now,
+    endsAt,
+    isTrial: false,
+    trialFeatures: null,
+  };
   await inst.save();
   const plan = await PlanModel.findById(inst.planId).lean();
   if (plan)
@@ -199,6 +221,82 @@ export async function renewSubscription(
     'Institution',
     inst._id,
     { months, endsAt, planId },
+    { institutionId: inst._id },
+  );
+  return inst;
+}
+
+export function featureLabel(k: (typeof TRIAL_FEATURE_KEYS)[number]) {
+  return {
+    multipleCampuses: 'multiple campuses',
+    customBranding: 'custom branding',
+    advancedAnalytics: 'advanced analytics',
+    aiCopilot: `the ${brand().agentName} AI assistant`,
+    aiBriefing: 'the daily AI briefing',
+  }[k];
+}
+
+export async function institutionAdmins(institutionId: Id) {
+  const ids = await MemberModel.find({
+    institutionId,
+    status: 'ACTIVE',
+    roles: 'INSTITUTION_ADMIN',
+  }).distinct('userId');
+  return UserModel.find({ _id: { $in: ids }, status: 'ACTIVE' })
+    .select('email fullName')
+    .lean();
+}
+
+export async function grantTrial(req: Request, id: string, days: number, features: Partial<TrialFeatures>) {
+  const inst = await InstitutionModel.findById(id);
+  if (!inst) throw ApiError.notFound('Institution');
+  if (inst.status !== 'ACTIVE')
+    throw ApiError.conflict('A trial can be given only to an approved, active institution.');
+  if (!inst.planId) throw ApiError.conflict('Give the institution a plan first.');
+  const now = new Date();
+  const trialFeatures = Object.fromEntries(
+    TRIAL_FEATURE_KEYS.map((k) => [k, Boolean(features[k])]),
+  ) as TrialFeatures;
+  inst.subscription = {
+    startsAt: now,
+    endsAt: new Date(now.getTime() + days * DAY),
+    isTrial: true,
+    trialFeatures,
+  };
+  await inst.save();
+  const included = TRIAL_FEATURE_KEYS.filter((k) => trialFeatures[k]).map(featureLabel);
+  const until = inst.subscription.endsAt!.toLocaleString('en-PK', {
+    timeZone: 'Asia/Karachi',
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  });
+  for (const u of await institutionAdmins(inst._id)) {
+    await notify(u._id, {
+      type: 'SUBSCRIPTION',
+      title: `${days}-day trial of ${brand().platformName}`,
+      body: `Your trial runs until ${until}. ${included.length ? `It includes ${included.join(', ')}.` : 'It includes the core admission features.'} Pay the subscription on the Billing page to keep access after the trial.`,
+      link: '/institution/billing',
+    });
+    await sendMail({
+      to: u.email,
+      subject: `Your ${days}-day trial of ${brand().platformName}`,
+      heading: `Your trial of ${brand().platformName}`,
+      paragraphs: [
+        `Dear ${u.fullName}, <b>${inst.name}</b> can use ${brand().platformName} until <b>${until}</b> (Pakistan time).`,
+        included.length
+          ? `The trial includes ${included.join(', ')}, together with the core admission features.`
+          : 'The trial includes the core admission features.',
+        'When the trial ends, the workspace is locked until the subscription is paid. You can pay on the Billing page at any time.',
+      ],
+      action: { label: 'Open billing', url: `${env.WEB_URL}/institution/billing` },
+    });
+  }
+  await audit(
+    req,
+    'INSTITUTION_TRIAL_GRANTED',
+    'Institution',
+    inst._id,
+    { days, features: trialFeatures },
     { institutionId: inst._id },
   );
   return inst;

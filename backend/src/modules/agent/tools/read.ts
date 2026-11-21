@@ -11,7 +11,7 @@ import { PaymentModel, VoucherModel } from '../../fees/fee.models';
 import { InstitutionModel, subscriptionState } from '../../institutions/institution.model';
 import { EnrollmentModel, MeritListModel, OfferModel } from '../../merit/merit.models';
 import { PlanModel } from '../../plans/plan.model';
-import { SubscriptionPaymentModel } from '../../platform/billing.model';
+import { SubscriptionPaymentModel, PaymentRequestModel } from '../../platform/billing.model';
 import { ProfileModel } from '../../profile/profile.model';
 import { ProgramModel, totalSeats } from '../../programs/program.model';
 import { RecordModel } from '../../records/record.models';
@@ -316,6 +316,24 @@ export const readTools = [
           .filter((x) => subscriptionState(x) === 'GRACE')
           .map((x) => x.shortName || x.name),
         readOnly: insts.filter((x) => subscriptionState(x) === 'READ_ONLY').map((x) => x.shortName || x.name),
+        onTrial: insts
+          .filter((x) => x.subscription?.isTrial && subscriptionState(x) === 'ACTIVE')
+          .map((x) => ({ institution: x.shortName || x.name, until: pktDay(x.subscription!.endsAt!) })),
+        trialEnded: insts
+          .filter((x) => subscriptionState(x) === 'TRIAL_ENDED')
+          .map((x) => x.shortName || x.name),
+        paymentsWaitingForVerification: (
+          await PaymentRequestModel.find({ ...t, status: 'PENDING' })
+            .sort({ createdAt: -1 })
+            .lean()
+        ).map((p) => ({
+          reference: p.reference,
+          amount: money(p.amount),
+          expected: money(p.expected),
+          months: p.months,
+          method: p.method,
+          submitted: pktDay(p.createdAt),
+        })),
       };
     },
   }),

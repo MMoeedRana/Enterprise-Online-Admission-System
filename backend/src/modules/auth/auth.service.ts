@@ -7,7 +7,7 @@ import { hashPassword, randomToken, sha256, verifyPassword } from '../../lib/cry
 import { ApiError } from '../../lib/http';
 import { sendMail } from '../../lib/mailer';
 import { signAccessToken } from '../../middleware/auth';
-import { InstitutionModel } from '../institutions/institution.model';
+import { InstitutionModel, effectiveFeatures, subscriptionState } from '../institutions/institution.model';
 import { MemberModel } from '../staff/member.model';
 import { UserModel, publicUser, type UserDoc } from '../users/user.model';
 import type { Id } from '../../lib/types';
@@ -69,7 +69,7 @@ export async function membershipsOf(userId: Id) {
   const members = await MemberModel.find({ userId, status: 'ACTIVE' }).lean();
   if (!members.length) return [];
   const insts = await InstitutionModel.find({ _id: { $in: members.map((m) => m.institutionId) } })
-    .select('name shortName slug status branding city planId')
+    .select('name shortName slug status branding city planId subscription')
     .lean();
   const plans = await PlanModel.find({ _id: { $in: insts.map((i) => i.planId).filter(Boolean) } })
     .select('features')
@@ -79,6 +79,13 @@ export async function membershipsOf(userId: Id) {
       const i = insts.find((x) => String(x._id) === String(m.institutionId));
       if (!i) return null;
       const roles = m.roles as StaffRole[];
+      const features = effectiveFeatures(
+        { ...(plans.find((p) => String(p._id) === String(i.planId))?.features ?? {}) } as Record<
+          string,
+          unknown
+        >,
+        i as never,
+      );
       return {
         institutionId: String(i._id),
         name: i.name,
@@ -87,12 +94,14 @@ export async function membershipsOf(userId: Id) {
         city: i.city,
         status: i.status,
         logoUrl: i.branding?.logoUrl ?? '',
-        ai: {
-          copilot: Boolean(plans.find((p) => String(p._id) === String(i.planId))?.features?.aiCopilot),
-          briefing: Boolean(plans.find((p) => String(p._id) === String(i.planId))?.features?.aiBriefing),
+        ai: { copilot: Boolean(features.aiCopilot), briefing: Boolean(features.aiBriefing) },
+        subscription: {
+          state: subscriptionState(i as never),
+          isTrial: Boolean(i.subscription?.isTrial),
+          endsAt: i.subscription?.endsAt ?? null,
         },
         branding: {
-          active: Boolean(plans.find((p) => String(p._id) === String(i.planId))?.features?.customBranding),
+          active: Boolean(features.customBranding),
           logoUrl: i.branding?.logoUrl ?? '',
           primaryColor: i.branding?.primaryColor ?? '',
           sidebarColor: i.branding?.sidebarColor ?? '',

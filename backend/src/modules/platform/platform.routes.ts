@@ -1,3 +1,4 @@
+import { PAYMENT_METHODS } from './billing.model';
 import { Router } from 'express';
 import { z } from 'zod';
 import { INSTITUTION_STATUSES, INSTITUTION_TYPES, PROVINCES, SECTORS } from '../../constants/enums';
@@ -15,6 +16,14 @@ import { MemberModel } from '../staff/member.model';
 import { CampusModel } from '../structure/structure.models';
 import { UserModel } from '../users/user.model';
 import * as svc from './platform.service';
+
+const trialFeaturesBody = z.object({
+  multipleCampuses: z.boolean().default(false),
+  customBranding: z.boolean().default(false),
+  advancedAnalytics: z.boolean().default(false),
+  aiCopilot: z.boolean().default(false),
+  aiBriefing: z.boolean().default(false),
+});
 
 export const platformRouter = Router();
 platformRouter.use(authenticate, requireSuperAdmin);
@@ -210,10 +219,14 @@ platformRouter.post('/institutions', async (req, res) => {
 platformRouter.post('/institutions/:id/approve', async (req, res) => {
   const { id } = parse(idParams, req.params);
   const body = parse(
-    z.object({ planId: objectId, trialDays: z.coerce.number().int().min(0).max(365).optional() }),
+    z.object({
+      planId: objectId,
+      trialDays: z.coerce.number().int().min(0).max(365).optional(),
+      trialFeatures: trialFeaturesBody.optional(),
+    }),
     req.body,
   );
-  ok(res, await svc.approveInstitution(req, id, body.planId, body.trialDays));
+  ok(res, await svc.approveInstitution(req, id, body.planId, body.trialDays, body.trialFeatures));
 });
 
 platformRouter.post('/institutions/:id/reject', async (req, res) => {
@@ -246,12 +259,24 @@ platformRouter.post('/institutions/:id/renew', async (req, res) => {
       months: z.coerce.number().int().min(1).max(36),
       planId: objectId.optional(),
       amount: z.coerce.number().min(0).max(100_000_000).optional(),
-      method: z.enum(['BANK_TRANSFER', 'CHEQUE', 'CASH', 'ONLINE']).optional(),
+      method: z.enum(PAYMENT_METHODS).optional(),
       reference: z.string().trim().max(60).optional(),
     }),
     req.body,
   );
   ok(res, await svc.renewSubscription(req, id, body.months, body.planId, body));
+});
+
+platformRouter.post('/institutions/:id/trial', async (req, res) => {
+  const { id } = parse(idParams, req.params);
+  const body = parse(
+    z.object({
+      days: z.coerce.number().int().min(1, 'At least 1 day.').max(60, 'At most 60 days.'),
+      features: trialFeaturesBody,
+    }),
+    req.body,
+  );
+  ok(res, await svc.grantTrial(req, id, body.days, body.features));
 });
 
 platformRouter.post('/institutions/:id/resend-admin-invite', async (req, res) => {

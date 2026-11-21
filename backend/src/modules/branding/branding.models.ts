@@ -36,6 +36,23 @@ const platformSettingsSchema = new Schema(
     primaryColor: { type: String, default: DEFAULT_BRAND.primaryColor, match: HEX },
     sidebarColor: { type: String, default: DEFAULT_BRAND.sidebarColor, match: HEX },
     avatarColor: { type: String, default: '' },
+    paymentAccounts: {
+      bank: {
+        bankName: { type: String, default: '', trim: true },
+        accountTitle: { type: String, default: '', trim: true },
+        accountNumber: { type: String, default: '', trim: true },
+        iban: { type: String, default: '', trim: true },
+      },
+      jazzcash: {
+        accountTitle: { type: String, default: '', trim: true },
+        number: { type: String, default: '', trim: true },
+      },
+      easypaisa: {
+        accountTitle: { type: String, default: '', trim: true },
+        number: { type: String, default: '', trim: true },
+      },
+      instructions: { type: String, default: '', trim: true },
+    },
     updatedBy: { type: Types.ObjectId, ref: 'User', default: null },
   },
   { timestamps: true },

@@ -1,3 +1,4 @@
+import { institutionBillingRouter, platformBillingRouter } from './modules/platform/billing.routes';
 import { Router } from 'express';
 import mongoose from 'mongoose';
 import { ok } from './lib/http';
@@ -67,6 +68,7 @@ apiRouter.use('/platform/agent', platformAgentRouter);
 apiRouter.use('/platform/support', platformSupportRouter);
 apiRouter.use('/platform/audit-logs', platformAuditRouter);
 apiRouter.use('/platform/analytics', platformAnalyticsRouter);
+apiRouter.use('/platform/billing', platformBillingRouter);
 apiRouter.use('/platform', platformRouter);
 apiRouter.use('/notifications', notificationRouter);
 apiRouter.use('/files', fileRouter);
@@ -104,4 +106,5 @@ tenant.use('/support/tickets', institutionSupportRouter);
 tenant.use('/audit-logs', institutionAuditRouter);
 tenant.use('/institution/branding', institutionBrandingRouter);
 tenant.use('/agent', institutionAgentRouter);
+tenant.use('/billing', institutionBillingRouter);
 apiRouter.use(tenant);

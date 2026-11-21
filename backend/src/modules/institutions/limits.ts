@@ -1,5 +1,6 @@
 import { ApiError } from '../../lib/http';
 import { PlanModel } from '../plans/plan.model';
+import { effectiveFeatures } from './institution.model';
 import { ProgramModel } from '../programs/program.model';
 import { MemberModel } from '../staff/member.model';
 import { CampusModel } from '../structure/structure.models';
@@ -8,10 +9,10 @@ import { brand } from '../../lib/brand';
 
 export type LimitKey = 'campuses' | 'programs' | 'staff';
 
-export async function planOf(institution: { planId?: unknown }) {
+export async function planOf(institution: { planId?: unknown; subscription?: unknown }) {
   const plan = institution.planId ? await PlanModel.findById(institution.planId as Id).lean() : null;
   if (!plan) throw new ApiError(403, 'NO_PLAN', 'This institution has no subscription plan.');
-  return plan;
+  return { ...plan, features: effectiveFeatures({ ...plan.features }, institution as never) };
 }
 
 export async function usageOf(institutionId: Id) {

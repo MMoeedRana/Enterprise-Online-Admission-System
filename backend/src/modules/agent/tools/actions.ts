@@ -18,6 +18,8 @@ import {
 } from '../../support/support.model';
 import { openTicket, reply } from '../../support/support.service';
 import { UserModel } from '../../users/user.model';
+import { TRIAL_FEATURE_KEYS, type TrialFeatures } from '../../institutions/institution.model';
+import { featureLabel, grantTrial } from '../../platform/platform.service';
 import { IntegrityAlertModel } from '../agent.models';
 import { adminUserIds } from '../integrity.rules';
 import {
@@ -81,7 +83,48 @@ async function openDrafts(ctx: AgentContext) {
   return { open, drafts };
 }
 
+const trialFeatures = z
+  .object({
+    multipleCampuses: z.boolean().describe('More than one campus'),
+    customBranding: z.boolean().describe('Own logo and colors'),
+    advancedAnalytics: z.boolean().describe('Advanced analytics and reports'),
+    aiCopilot: z.boolean().describe('The AI assistant chat and actions'),
+    aiBriefing: z.boolean().describe('The daily AI briefing'),
+  })
+  .describe(
+    'Which plan features the trial includes. Core admission features are always included. Ask the Super Admin which of these to include if they did not say; the AI assistant is normally not part of a trial.',
+  );
+
 export const actionTools = [
+  defineTool({
+    name: 'grant_trial',
+    label: 'Preparing a trial',
+    description:
+      'Gives an approved institution a free trial of N days (1 to 60) with the chosen plan features. When the trial ends the workspace is locked until the subscription is paid. Before calling, confirm the number of days and which features to include with the Super Admin. Runs only after the Super Admin confirms.',
+    scope: 'platform',
+    kind: 'action',
+    input: z.object({
+      institution: z.string().min(2).max(120),
+      days: z.number().int().min(1).max(60),
+      features: trialFeatures,
+    }),
+    describe: async (ctx, i: { institution: string; days: number; features: TrialFeatures }) => {
+      const inst = await resolveInstitution(ctx, i.institution);
+      if (!inst) throw new ToolError('Institution not found.');
+      if (inst.status !== 'ACTIVE')
+        throw new ToolError(`${inst.name} is not an approved, active institution.`);
+      const on = TRIAL_FEATURE_KEYS.filter((k) => i.features[k]).map(featureLabel);
+      const off = TRIAL_FEATURE_KEYS.filter((k) => !i.features[k]).map(featureLabel);
+      return `Give ${inst.name} a ${i.days}-day trial with the core admission features${on.length ? `, ${on.join(', ')}` : ''}${off.length ? `; not included: ${off.join(', ')}` : ''}. After the trial the workspace is locked until the subscription is paid.`;
+    },
+    run: async (ctx, i: { institution: string; days: number; features: TrialFeatures }) => {
+      const inst = await resolveInstitution(ctx, i.institution);
+      if (!inst) throw new ToolError('Institution not found.');
+      const updated = await grantTrial(ctx.req, String(inst._id), i.days, i.features);
+      return { institution: inst.name, trialUntil: pktDay(updated.subscription!.endsAt!) };
+    },
+  }),
+
   defineTool({
     name: 'send_renewal_reminder',
     label: 'Preparing a renewal reminder',
@@ -102,8 +145,8 @@ export const actionTools = [
       const ends = inst.subscription?.endsAt ? pktDay(inst.subscription.endsAt) : 'soon';
       const sent = await remind(await adminUserIds(inst._id), {
         title: `Your ${brand().platformName} subscription needs renewal`,
-        body: `The subscription of ${inst.name} ends on ${ends}. Please contact ${brand().platformName} support to renew it so that your workspace stays fully usable.`,
-        link: '/institution/settings',
+        body: `The subscription of ${inst.name} ends on ${ends}. Please pay the subscription on the Billing page so that your workspace stays fully usable.`,
+        link: '/institution/billing',
       });
       await audit(
         ctx.req,

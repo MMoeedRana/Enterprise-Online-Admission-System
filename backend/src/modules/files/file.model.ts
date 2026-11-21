@@ -1,6 +1,6 @@
 import { Schema, Types, model, type InferSchemaType } from 'mongoose';
 
-export const FILE_PURPOSES = ['DOCUMENT', 'RESULT_CARD', 'PAYMENT_PROOF'] as const;
+export const FILE_PURPOSES = ['DOCUMENT', 'RESULT_CARD', 'PAYMENT_PROOF', 'SUBSCRIPTION_PROOF'] as const;
 
 const fileSchema = new Schema(
   {

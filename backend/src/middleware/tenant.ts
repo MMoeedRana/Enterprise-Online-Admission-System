@@ -30,6 +30,13 @@ export async function resolveTenant(req: Request, _res: Response, next: NextFunc
   }
 
   const state = subscriptionState(institution);
+  if (state === 'TRIAL_ENDED' && !req.originalUrl.startsWith('/api/v1/billing')) {
+    throw new ApiError(
+      403,
+      'TRIAL_ENDED',
+      'The trial of this institution has ended. Please pay the subscription on the Billing page to continue.',
+    );
+  }
   if (state === 'READ_ONLY' && !['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
     throw new ApiError(
       403,

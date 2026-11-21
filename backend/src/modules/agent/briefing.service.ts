@@ -4,7 +4,7 @@ import { env } from '../../config/env';
 import { brand } from '../../lib/brand';
 import { logger } from '../../lib/logger';
 import { sendMail } from '../../lib/mailer';
-import { InstitutionModel, subscriptionState } from '../institutions/institution.model';
+import { InstitutionModel, subscriptionState, effectiveFeatures } from '../institutions/institution.model';
 import { notify } from '../notifications/notify';
 import { PlanModel } from '../plans/plan.model';
 import { UserModel } from '../users/user.model';
@@ -174,9 +174,11 @@ export async function runDailyBriefings(date = pktDay()) {
     made++;
   }
   const plans = await PlanModel.find({ 'features.aiBriefing': true }).distinct('_id');
-  const insts = await InstitutionModel.find({ status: 'ACTIVE', planId: { $in: plans } })
-    .select('_id name')
-    .lean();
+  const insts = (
+    await InstitutionModel.find({ status: 'ACTIVE', planId: { $in: plans } })
+      .select('_id name subscription')
+      .lean()
+  ).filter((i) => effectiveFeatures({ aiBriefing: true }, i as never).aiBriefing);
   for (const i of insts) {
     if (await BriefingModel.exists({ scope: 'INSTITUTION', institutionId: i._id, date })) continue;
     const b = await institutionBriefing(i._id, date);
