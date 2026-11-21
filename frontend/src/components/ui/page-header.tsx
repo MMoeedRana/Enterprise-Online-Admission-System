@@ -41,7 +41,11 @@ export function PageHeader({
     if (!actions && !crumbs) return null;
     return (
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-        <div className="min-w-0">{trail}</div>
+        <div className="min-w-0">
+          {trail}
+          {crumbs && <h2 className="text-ink text-[20px] leading-tight font-bold tracking-tight">{title}</h2>}
+          {crumbs && subtitle && <p className={cn('text-muted mt-1 text-[13.5px]', subtitleClassName)}>{subtitle}</p>}
+        </div>
         {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
       </div>
     );

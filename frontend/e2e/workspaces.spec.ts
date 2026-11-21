@@ -73,7 +73,7 @@ test.describe('institution workspace', () => {
     await page.fill('#tk-message', 'Created by the end-to-end test to check the support flow.');
     await page.getByRole('button', { name: 'Open ticket' }).click();
     await page.waitForURL(/\/institution\/support\/[a-f0-9]{24}$/);
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText(subject);
+    await expect(page.getByRole('heading', { name: subject })).toBeVisible();
     await expect(page.getByText('High · 8 h').first()).toBeVisible();
   });
 
@@ -131,7 +131,7 @@ test.describe('platform (Super Admin)', () => {
     await login(page, ACCOUNTS.superAdmin, SUPER_ADMIN_PASSWORD);
     await page.goto('/platform/audit-log');
     await settle(page);
-    await page.getByLabel('Filter by action').selectOption('PLAN_CREATED');
+    await page.locator('select[aria-label="Filter by action"]').selectOption('PLAN_CREATED');
     await expect(
       page
         .locator('main span', { hasText: /^Plan created$/ })

@@ -1,3 +1,5 @@
+'use client';
+
 import {
   Children,
   isValidElement,
@@ -40,6 +42,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSel
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const listId = useId();
+  const valueId = useId();
   const controlled = rest.value !== undefined;
   const initial = rest.value ?? rest.defaultValue ?? '';
   const [internal, setInternal] = useState(String(initial));
@@ -61,10 +64,6 @@ export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSel
       }
     });
   collect(children);
-
-  useEffect(() => {
-    if (controlled) setInternal(String(rest.value ?? ''));
-  }, [controlled, rest.value]);
 
   useEffect(() => {
     if (!open) return;
@@ -92,7 +91,8 @@ export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSel
         role="combobox"
         aria-expanded={open}
         aria-controls={listId}
-        aria-label={rest['aria-label']}
+        aria-label={rest['aria-label'] ?? (rest.id ? undefined : rest.title || rest.name || 'Choose an option')}
+        aria-labelledby={!rest['aria-label'] && rest.id ? `${rest.id}-label ${valueId}` : undefined}
         disabled={rest.disabled}
         onBlur={rest.onBlur as unknown as FocusEventHandler<HTMLButtonElement>}
         onClick={() => setOpen((v) => !v)}
@@ -105,11 +105,11 @@ export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSel
         }}
         className={cn(
           base,
-          'h-11 flex items-center justify-between gap-3 text-left',
+          'flex h-11 items-center justify-between gap-3 text-left',
           open && 'border-primary ring-1 ring-[var(--ring)]',
         )}
       >
-        <span className={cn('min-w-0 truncate', !selected && 'text-muted')}>
+        <span id={valueId} className={cn('min-w-0 truncate', !selected && 'text-muted')}>
           {selected?.label ?? options[0]?.label ?? ''}
         </span>
         <ChevronsUpDown className={cn('size-4 shrink-0 transition', open ? 'text-primary rotate-180' : 'text-muted')} />
@@ -135,9 +135,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSel
                 }}
                 className={cn(
                   'flex min-h-10 w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-[13.5px] transition',
-                  active
-                    ? 'bg-primary-soft text-primary font-semibold'
-                    : 'text-ink hover:bg-card-soft',
+                  active ? 'bg-primary-soft text-primary font-semibold' : 'text-ink hover:bg-card-soft',
                   option.disabled && 'cursor-not-allowed opacity-50',
                 )}
               >
@@ -150,6 +148,8 @@ export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSel
       )}
       <select
         ref={ref}
+        id={rest.id}
+        aria-hidden="true"
         aria-label={rest['aria-label']}
         name={rest.name}
         value={value}
@@ -178,7 +178,11 @@ interface FieldProps {
 export function Field({ label, htmlFor, error, hint, required, className, children }: FieldProps) {
   return (
     <div className={cn('flex flex-col gap-1.5', className)}>
-      <label htmlFor={htmlFor} className="text-ink text-[13px] font-semibold">
+      <label
+        htmlFor={htmlFor}
+        id={htmlFor ? `${htmlFor}-label` : undefined}
+        className="text-ink text-[13px] font-semibold"
+      >
         {label}
         {required && <span className="text-red-500"> *</span>}
       </label>
