@@ -1,5 +1,6 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
 import type { ChangeEvent, ReactNode } from 'react';
 import { StaffShell } from '@/components/layout/staff-shell';
 import { useAuth } from '@/features/auth/auth-context';
@@ -8,6 +9,7 @@ import { MitraLauncher } from '@/features/mitra/launcher';
 import { STAFF_ROLES } from '@/lib/constants';
 import { institutionNav } from './nav';
 import { SubscriptionBanner } from './subscription-banner';
+import { TrialLocked } from './trial-locked';
 import { Select } from '@/components/ui/input';
 
 function InstitutionSwitcher() {
@@ -37,6 +39,8 @@ function InstitutionSwitcher() {
 
 export function InstitutionShell({ children }: { children: ReactNode }) {
   const { current } = useAuth();
+  const pathname = usePathname();
+  const locked = current?.subscription?.state === 'TRIAL_ENDED' && !pathname.startsWith('/institution/billing');
   const role = current?.roles.includes('INSTITUTION_ADMIN')
     ? STAFF_ROLES.INSTITUTION_ADMIN
     : current?.roles.map((r) => STAFF_ROLES[r]).join(' · ');
@@ -53,12 +57,12 @@ export function InstitutionShell({ children }: { children: ReactNode }) {
         headerExtra={<InstitutionSwitcher />}
         banner={<SubscriptionBanner />}
         assistant={
-          current?.ai?.copilot && current.permissions.includes('ai.copilot') ? (
+          !locked && current?.ai?.copilot && current.permissions.includes('ai.copilot') ? (
             <MitraLauncher scope="institution" />
           ) : undefined
         }
       >
-        {children}
+        {locked ? <TrialLocked /> : children}
       </StaffShell>
     </>
   );

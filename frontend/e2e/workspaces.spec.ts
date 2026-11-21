@@ -44,6 +44,7 @@ test.describe('institution workspace', () => {
       '/institution/audit-log',
       '/institution/mitra',
       '/institution/settings',
+      '/institution/billing',
     ])
       await checkPage(page, path);
     expect(errors).toEqual([]);
@@ -96,6 +97,7 @@ test.describe('platform (Super Admin)', () => {
       '/platform/dashboard',
       '/platform/institutions',
       '/platform/plans',
+      '/platform/billing',
       '/platform/registry',
       '/platform/directory',
       '/platform/analytics',

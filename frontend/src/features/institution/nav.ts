@@ -18,6 +18,7 @@ import {
   Sigma,
   Sparkles,
   Users,
+  Wallet,
 } from 'lucide-react';
 import type { NavSection } from '@/components/layout/staff-shell';
 
@@ -78,6 +79,7 @@ export const institutionNav: NavSection[] = [
       { href: '/institution/directory', label: 'Directory Data', icon: BookOpen, permission: 'directory.edit' },
       { href: '/institution/support', label: 'Support', icon: LifeBuoy, permission: 'support.tickets' },
       { href: '/institution/audit-log', label: 'Audit Log', icon: History, permission: 'audit.view' },
+      { href: '/institution/billing', label: 'Billing', icon: Wallet, permission: 'institution.settings' },
       { href: '/institution/settings', label: 'Settings', icon: Settings, permission: 'institution.settings' },
     ],
   },

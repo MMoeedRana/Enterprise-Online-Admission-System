@@ -9,6 +9,7 @@ import {
   LifeBuoy,
   Palette,
   Sparkles,
+  Wallet,
 } from 'lucide-react';
 import type { NavSection } from '@/components/layout/staff-shell';
 
@@ -20,6 +21,7 @@ export const platformNav: NavSection[] = [
       { href: '/platform/mitra', label: '{agent}', icon: Sparkles },
       { href: '/platform/institutions', label: 'Institutions', icon: Building2 },
       { href: '/platform/plans', label: 'Plans', icon: CreditCard },
+      { href: '/platform/billing', label: 'Billing', icon: Wallet },
       { href: '/platform/registry', label: 'Registry Import', icon: Database },
       { href: '/platform/directory', label: 'Reference Directory', icon: BookOpen },
     ],

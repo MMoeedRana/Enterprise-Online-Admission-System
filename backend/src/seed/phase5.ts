@@ -30,7 +30,25 @@ async function storeImage(file: string, kind: 'INSTITUTION_LOGO' | 'AVATAR', own
 }
 
 async function seedBranding() {
-  await PlatformSettingsModel.updateOne({ _id: 'platform' }, { $setOnInsert: {} }, { upsert: true });
+  await PlatformSettingsModel.updateOne(
+    { _id: 'platform' },
+    {
+      $setOnInsert: {
+        paymentAccounts: {
+          bank: {
+            bankName: 'Meezan Bank',
+            accountTitle: 'ADMITRA Technologies',
+            accountNumber: '0101-0123456789',
+            iban: 'PK36MEZN0001010123456789',
+          },
+          jazzcash: { accountTitle: 'ADMITRA Technologies', number: '03001234567' },
+          easypaisa: { accountTitle: 'ADMITRA Technologies', number: '03451234567' },
+          instructions: 'Write your institution short name in the transfer note.',
+        },
+      },
+    },
+    { upsert: true },
+  );
   const cvu = await InstitutionModel.findOne({ shortName: 'CVU' });
   const rit = await InstitutionModel.findOne({ shortName: 'RIT' });
   if (cvu) {

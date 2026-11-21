@@ -21,6 +21,7 @@ export interface Membership {
   logoUrl: string;
   ai?: { copilot: boolean; briefing: boolean };
   branding?: { active: boolean; logoUrl: string; primaryColor: string; sidebarColor: string };
+  subscription?: { state: string; isTrial: boolean; endsAt: string | null };
   roles: StaffRole[];
   permissions: string[];
 }

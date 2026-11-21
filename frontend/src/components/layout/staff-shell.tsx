@@ -85,7 +85,10 @@ function Sidebar({
           <PanelLeftOpen className="size-[18px]" />
         </button>
       )}
-      <nav className={cn('elegant-scrollbar flex-1 overflow-y-auto pb-4', collapsed ? 'px-2' : 'px-4')} aria-label="Workspace">
+      <nav
+        className={cn('elegant-scrollbar flex-1 overflow-y-auto pb-4', collapsed ? 'px-2' : 'px-4')}
+        aria-label="Workspace"
+      >
         {sections.map((s, i) => (
           <div key={s.title} className={cn(!collapsed && i > 0 && 'mt-6', collapsed && i > 0 && 'mt-3')}>
             {!collapsed && (
@@ -120,7 +123,7 @@ function Sidebar({
                         <it.icon className="size-[19px]" strokeWidth={1.8} />
                         {!collapsed && it.label.replace('{agent}', brand.agentName)}
                         {collapsed && (
-                          <span className="pointer-events-none absolute left-[calc(100%+10px)] z-[80] hidden whitespace-nowrap rounded-lg bg-slate-950 px-2.5 py-1.5 text-[12px] font-semibold text-white shadow-xl group-hover:block group-focus-visible:block">
+                          <span className="pointer-events-none absolute left-[calc(100%+10px)] z-[80] hidden rounded-lg bg-slate-950 px-2.5 py-1.5 text-[12px] font-semibold whitespace-nowrap text-white shadow-xl group-hover:block group-focus-visible:block">
                             {it.label.replace('{agent}', brand.agentName)}
                           </span>
                         )}
@@ -133,7 +136,12 @@ function Sidebar({
         ))}
       </nav>
       {user && (
-        <div className={cn('bg-navy-line/70 flex items-center rounded-2xl', collapsed ? 'mx-auto mb-4 justify-center p-2' : 'm-4 gap-3 p-3.5')}>
+        <div
+          className={cn(
+            'bg-navy-line/70 flex items-center rounded-2xl',
+            collapsed ? 'mx-auto mb-4 justify-center p-2' : 'm-4 gap-3 p-3.5',
+          )}
+        >
           <Avatar name={user.fullName} src={user.avatarUrl} />
           {!collapsed && (
             <div className="min-w-0">
@@ -172,6 +180,7 @@ export function StaffShell({
     '/platform/mitra': `Your admission operations copilot for the whole ${brand.platformName} platform`,
     '/platform/institutions': 'Manage institutions, plans, activation and invitations',
     '/platform/plans': 'Configure subscriptions, limits and platform plans',
+    '/platform/billing': 'Verify subscription payments and set the accounts institutions pay into',
     '/platform/registry': 'Import and verify official academic registry records',
     '/platform/directory': 'Institutions, programs and closing merit used by the directory and the Admission Advisor',
     '/platform/analytics': 'Platform usage and admissions performance',
@@ -196,6 +205,7 @@ export function StaffShell({
     '/institution/directory': 'Review and update your institution directory data',
     '/institution/support': 'Create and manage support requests',
     '/institution/audit-log': 'Review activity across this institution',
+    '/institution/billing': 'Your plan, trial and subscription payments',
     '/institution/settings': 'Institution profile, branding and workspace settings',
   };
   const routeSubtitle =
@@ -248,7 +258,9 @@ export function StaffShell({
         </div>
       )}
 
-      <div className={cn('transition-[padding] duration-200', collapsed ? 'lg:pl-[76px]' : 'lg:pl-[240px] xl:pl-[260px]')}>
+      <div
+        className={cn('transition-[padding] duration-200', collapsed ? 'lg:pl-[76px]' : 'lg:pl-[240px] xl:pl-[260px]')}
+      >
         <header className="border-line bg-card/90 sticky top-0 z-30 flex h-16 items-center gap-3 border-b px-4 backdrop-blur sm:px-6 lg:h-[76px] lg:px-8">
           <button
             onClick={() => setOpen(true)}
@@ -261,7 +273,9 @@ export function StaffShell({
           <div className="min-w-0 flex-1 px-1 sm:px-2">
             <h1 className="text-ink truncate text-[15px] font-bold sm:text-[17px]">{routeLabel}</h1>
             {routeSubtitle && (
-              <p className="text-muted max-w-full truncate text-[10.5px] sm:text-[11.5px] lg:text-[12.5px]">{routeSubtitle}</p>
+              <p className="text-muted max-w-full truncate text-[10.5px] sm:text-[11.5px] lg:text-[12.5px]">
+                {routeSubtitle}
+              </p>
             )}
           </div>
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">

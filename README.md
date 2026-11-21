@@ -176,7 +176,41 @@ The API refuses to start if a value it needs is missing. Restart the API after c
 uploaded before the change stay in the old place, so choose the driver before going live. With a bucket,
 turn on its versioning or backups, because `npm run backup` then saves the database only.
 
-## 7. Sample accounts (after `npm run seed:demo`)
+## 7. Subscriptions, trials and payments
+
+There are two kinds of money in ADMITRA, and each goes to a different account.
+
+**Admission fee (applicant to institution).** The applicant downloads the fee challan, pays at the bank
+or through the institution's account, and uploads the receipt. The Finance Officer checks it under
+Payments and verifies or rejects it. The money stays with the institution; the platform never holds it.
+
+**Subscription fee (institution to platform).**
+
+1. The Super Admin opens **Billing → Payment accounts** and enters the platform's bank account
+   (bank, account title, account number, IBAN), JazzCash number and Easypaisa number. IBANs and mobile
+   wallet numbers are checked when saved.
+2. The Institution Admin opens **Billing**, sees the plan, the amount and these accounts (each value can be
+   copied), pays through the bank, JazzCash or Easypaisa, and sends the transaction ID with the receipt.
+3. The Super Admin gets a notification and an e-mail, opens **Billing → Payments to verify**, checks the
+   receipt against the account statement and presses **Verify** or **Reject** (with a reason).
+4. Verify renews the subscription for the paid months automatically, records the platform fee and tells the
+   institution admins. Reject tells them why. The same transaction ID cannot be sent twice.
+
+**Trials.** The Super Admin can give an institution a trial of 1 to 60 days from the institution page
+(**Give trial**) or when approving it, and ticks the features included: multiple campuses, custom
+branding, advanced analytics, the AI assistant and the daily AI briefing. The AI features are off unless
+ticked. The admins see the days left in a banner. When the trial ends, the workspace is locked for all staff
+(the API answers `TRIAL_ENDED`), except **Billing**, so the admin can still pay; it opens again as soon as the
+payment is verified. No data is deleted. The Super Admin can also ask Mitra, for example "give Crescent
+Valley a 3-day trial": Mitra asks how many days and which features to include, prepares the trial and
+starts it only after Confirm.
+
+**Payment gateway.** Payments are made by transfer to the platform's own accounts and verified by the Super
+Admin, so no gateway contract is needed. Automatic online payment through the JazzCash or Easypaisa
+merchant APIs needs a registered business merchant account and its credentials, and can be added later
+without changing this flow (the verified payment record stays the same).
+
+## 8. Sample accounts (after `npm run seed:demo`)
 
 All sample accounts use the password `Admitra@123` (the Super Admin uses the one in `.env`).
 
@@ -206,7 +240,7 @@ declined offers and one revocation) and a reference directory of 18 institutions
 years of closing merit. Every institution, person and figure in it is fictional and exists only
 for development and demonstration. The seed command is refused in production.
 
-## 8. Scripts
+## 9. Scripts
 
 | Folder   | Command             | Purpose                                   |
 | -------- | ------------------- | ----------------------------------------- |
@@ -223,7 +257,7 @@ for development and demonstration. The seed command is refused in production.
 | frontend | `npm run build` / `npm start` | Production build and start      |
 | frontend | `npm run lint` / `npm run typecheck` | Code checks                |
 
-## 9. Development status
+## 10. Development status
 
 | Phase | Scope | Status |
 | ----- | ----- | ------ |
@@ -302,7 +336,8 @@ and colors that are adjusted automatically to keep WCAG AA contrast; and **Mitra
 switchable AI providers (Gemini by default, OpenAI, Claude or any OpenAI-compatible service), a chat for the
 Super Admin and for institution admins that answers from live data through permission-checked tools,
 actions that run only after Confirm (fee, offer and application reminders, renewal reminders, ticket
-replies, alerts), platform fee records on renewal, integrity rules with evidence, daily briefings by
+replies, alerts, trials), platform fee records on renewal, trials with chosen features that lock the
+workspace when they end, subscription payments by bank, JazzCash or Easypaisa verified by the Super Admin, integrity rules with evidence, daily briefings by
 notification and e-mail, and a daily message limit.
 
 Uploaded files can be kept in the local storage folder (default), an Amazon S3 bucket or a Cloudflare R2

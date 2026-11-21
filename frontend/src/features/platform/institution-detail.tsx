@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { CheckCircle2, Mail, PauseCircle, PlayCircle, RefreshCw, XCircle } from 'lucide-react';
+import { CheckCircle2, Gift, Mail, PauseCircle, PlayCircle, RefreshCw, XCircle } from 'lucide-react';
 import { useState } from 'react';
 import { Badge, StatusBadge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ import { errorMessage, get } from '@/lib/api';
 import { INSTITUTION_TYPES, SECTORS, STAFF_ROLES } from '@/lib/constants';
 import { formatDate, formatMoney } from '@/lib/format';
 import type { Institution, Plan } from '@/lib/types';
+import { DEFAULT_TRIAL, PAYMENT_METHODS, TrialFeaturePicker, type TrialFeatures } from '@/features/billing/shared';
 import { useInstitutionAction, usePlans } from './institutions';
 
 type Detail = Institution & {
@@ -40,7 +41,10 @@ export function InstitutionDetail({ id }: { id: string }) {
   });
   const plans = usePlans();
   const action = useInstitutionAction(id);
-  const [dialog, setDialog] = useState<'approve' | 'reject' | 'suspend' | 'reactivate' | 'renew' | null>(null);
+  const [dialog, setDialog] = useState<'approve' | 'reject' | 'suspend' | 'reactivate' | 'renew' | 'trial' | null>(
+    null,
+  );
+  const [trial, setTrial] = useState<{ days: number; features: TrialFeatures }>({ days: 3, features: DEFAULT_TRIAL });
   const [planId, setPlanId] = useState('');
   const [days, setDays] = useState(30);
   const [months, setMonths] = useState(12);
@@ -103,6 +107,11 @@ export function InstitutionDetail({ id }: { id: string }) {
                 onClick={() => setDialog('reactivate')}
               >
                 Re-activate
+              </Button>
+            )}
+            {i.status === 'ACTIVE' && (
+              <Button variant="secondary" icon={<Gift className="size-4" />} onClick={() => setDialog('trial')}>
+                Give trial
               </Button>
             )}
             {(i.status === 'ACTIVE' || i.status === 'SUSPENDED') && (
@@ -229,7 +238,13 @@ export function InstitutionDetail({ id }: { id: string }) {
               variant="success"
               disabled={!planId}
               loading={action.isPending}
-              onClick={() => run('approve', { planId, trialDays: days }, 'Institution approved and invitation sent.')}
+              onClick={() =>
+                run(
+                  'approve',
+                  { planId, trialDays: days, trialFeatures: trial.features },
+                  'Institution approved and invitation sent.',
+                )
+              }
             >
               Approve
             </Button>
@@ -258,6 +273,54 @@ export function InstitutionDetail({ id }: { id: string }) {
               onChange={(e) => setDays(Number(e.target.value))}
             />
           </Field>
+          <div className="sm:col-span-2">
+            <p className="text-ink mb-2 text-[13px] font-semibold">Features during the trial</p>
+            <TrialFeaturePicker value={trial.features} onChange={(features) => setTrial({ ...trial, features })} />
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        open={dialog === 'trial'}
+        onClose={() => setDialog(null)}
+        title="Give a trial"
+        description="The workspace works for the chosen days with only the features you tick. When the trial ends, staff cannot use the workspace until the subscription is paid; only Billing stays open."
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setDialog(null)}>
+              Cancel
+            </Button>
+            <Button
+              loading={action.isPending}
+              disabled={!(trial.days >= 1 && trial.days <= 60)}
+              onClick={() =>
+                run('trial', trial, `${trial.days}-day trial started. The institution admins have been notified.`)
+              }
+            >
+              Start trial
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <Field label="Trial days" htmlFor="tr-days" hint="1 to 60 days" required>
+            <Input
+              id="tr-days"
+              type="number"
+              min={1}
+              max={60}
+              placeholder="e.g. 3"
+              value={trial.days}
+              onChange={(e) => setTrial({ ...trial, days: Number(e.target.value) })}
+            />
+          </Field>
+          <div>
+            <p className="text-ink mb-2 text-[13px] font-semibold">Features during the trial</p>
+            <p className="text-muted mb-3 text-[12.5px]">
+              Core admission features are always included. The AI assistant is off unless you tick it.
+            </p>
+            <TrialFeaturePicker value={trial.features} onChange={(features) => setTrial({ ...trial, features })} />
+          </div>
         </div>
       </Modal>
 
@@ -323,10 +386,11 @@ export function InstitutionDetail({ id }: { id: string }) {
           </Field>
           <Field label="Payment method" htmlFor="rn-method">
             <Select id="rn-method" value={fee.method} onChange={(e) => setFee({ ...fee, method: e.target.value })}>
-              <option value="BANK_TRANSFER">Bank transfer</option>
-              <option value="CHEQUE">Cheque</option>
-              <option value="CASH">Cash</option>
-              <option value="ONLINE">Online</option>
+              {PAYMENT_METHODS.map((m) => (
+                <option key={m.value} value={m.value}>
+                  {m.label}
+                </option>
+              ))}
             </Select>
           </Field>
           <Field label="Reference" htmlFor="rn-ref" className="sm:col-span-2">
