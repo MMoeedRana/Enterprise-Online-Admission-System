@@ -3,7 +3,12 @@
 import { getAccessToken, getInstitutionHeader, refreshSession } from '@/lib/api';
 import type { StreamEvent } from './types';
 
-export async function streamMessage(url: string, message: string, onEvent: (e: StreamEvent) => void) {
+export async function streamMessage(
+  url: string,
+  message: string,
+  onEvent: (e: StreamEvent) => void,
+  attachmentIds: string[] = [],
+) {
   const call = () =>
     fetch(`/api/v1${url}`, {
       method: 'POST',
@@ -14,7 +19,7 @@ export async function streamMessage(url: string, message: string, onEvent: (e: S
         ...(getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {}),
         ...(getInstitutionHeader() ? { 'X-Institution-Id': getInstitutionHeader()! } : {}),
       },
-      body: JSON.stringify({ message }),
+      body: JSON.stringify({ message, attachmentIds }),
     });
   let res: Response;
   if (!getAccessToken()) {

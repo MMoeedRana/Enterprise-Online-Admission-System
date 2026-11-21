@@ -588,3 +588,94 @@ describe('file exports by the assistant (AGENT-3)', () => {
     }
   });
 });
+
+describe('files and long texts given to the assistant (AGENT-2)', () => {
+  const asRoot = async () => {
+    const root = await superAdminToken();
+    return (m: 'get' | 'post', url: string) =>
+      api()[m](`/api/v1/platform/agent${url}`).set('Authorization', `Bearer ${root}`);
+  };
+
+  it('turns a long pasted text into an attachment named after its first two words', async () => {
+    const as = await asRoot();
+    const text = `admission policy ${'every applicant must submit verified marks before the closing date '.repeat(60)}`;
+    const r = await as('post', '/attachments/text').send({ text });
+    expect(r.status).toBe(201);
+    expect(r.body.data).toMatchObject({ name: 'Admission Policy', kind: 'paste' });
+    expect(r.body.data.words).toBeGreaterThan(500);
+  });
+
+  it('reads PDF, Word and Excel files and refuses other files', async () => {
+    const as = await asRoot();
+    const PDFDocument = (await import('pdfkit')).default;
+    const pdf = await new Promise<Buffer>((resolve) => {
+      const doc = new PDFDocument();
+      const parts: Buffer[] = [];
+      doc.on('data', (c: Buffer) => parts.push(c));
+      doc.on('end', () => resolve(Buffer.concat(parts)));
+      doc.text('Merit policy: entry test carries fifty percent weight.');
+      doc.end();
+    });
+    const JSZip = (await import('jszip')).default;
+    const zip = new JSZip();
+    zip.file(
+      '[Content_Types].xml',
+      '<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>',
+    );
+    zip.file(
+      '_rels/.rels',
+      '<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="r1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>',
+    );
+    zip.file(
+      'word/document.xml',
+      '<?xml version="1.0"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>Hostel rules for new students</w:t></w:r></w:p></w:body></w:document>',
+    );
+    const docx = await zip.generateAsync({ type: 'nodebuffer' });
+    const ExcelJS = (await import('exceljs')).default;
+    const wb = new ExcelJS.Workbook();
+    wb.addWorksheet('Seats').addRows([
+      ['Program', 'Seats'],
+      ['BS Computer Science', 60],
+    ]);
+    const xlsx = Buffer.from(await wb.xlsx.writeBuffer());
+
+    const up = (buf: Buffer, name: string) => as('post', '/attachments').attach('file', buf, name);
+    const a = await up(pdf, 'policy.pdf');
+    const b = await up(docx, 'rules.docx');
+    const c = await up(xlsx, 'seats.xlsx');
+    expect([a.status, b.status, c.status]).toEqual([201, 201, 201]);
+    expect([a.body.data.kind, b.body.data.kind, c.body.data.kind]).toEqual(['pdf', 'docx', 'xlsx']);
+    expect((await up(Buffer.concat([Buffer.from('MZ'), Buffer.alloc(300, 1)]), 'tool.exe')).status).toBe(422);
+
+    const fake = new FakeProvider([{ content: 'Summary ready.' }]);
+    setProvider(fake);
+    const conv = await as('post', '/conversations');
+    const r = await as('post', `/conversations/${conv.body.data._id}/messages`).send({
+      message: 'Explain these files',
+      attachmentIds: [a.body.data._id, b.body.data._id, c.body.data._id],
+    });
+    expect(r.body.data.message.content).toBe('Summary ready.');
+    const sent = fake.calls[0]!.messages.at(-1)!.content;
+    expect(sent).toContain('Explain these files');
+    expect(sent).toContain('entry test carries fifty percent weight');
+    expect(sent).toContain('Hostel rules for new students');
+    expect(sent).toContain('BS Computer Science\t60');
+    const view = await as('get', `/conversations/${conv.body.data._id}`);
+    const userMsg = view.body.data.messages.find((m: { role: string }) => m.role === 'user');
+    expect(userMsg.content).toBe('Explain these files');
+    expect(userMsg.attachments.map((x: { name: string }) => x.name)).toEqual([
+      'policy.pdf',
+      'rules.docx',
+      'seats.xlsx',
+    ]);
+
+    const inst = await createInstitution(`at${Math.random().toString(36).slice(2, 6)}`, {
+      plan: await copilotPlan(),
+    });
+    const c2 = await inst.as.post('/agent/conversations');
+    const stolen = await inst.as
+      .post(`/agent/conversations/${c2.body.data._id}/messages`)
+      .send({ message: 'Read it', attachmentIds: [a.body.data._id] });
+    expect(stolen.status).toBe(422);
+  });
+});

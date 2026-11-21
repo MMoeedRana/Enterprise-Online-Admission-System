@@ -11,6 +11,7 @@ import {
   History,
   Loader2,
   MessageSquarePlus,
+  Paperclip,
   PanelLeftClose,
   PanelLeftOpen,
   Search,
@@ -35,6 +36,7 @@ import { streamMessage } from './stream';
 import {
   base,
   type AgentAction,
+  type AgentAttachment,
   type AgentFile,
   type AgentStatus,
   type Conversation,
@@ -115,6 +117,62 @@ function CopyButton({ text }: { text: string }) {
       {done ? <Check className="size-3.5 text-green-700 dark:text-green-400" /> : <Copy className="size-3.5" />}
       {done ? 'Copied' : 'Copy'}
     </button>
+  );
+}
+
+const KIND_LABEL: Record<AgentAttachment['kind'], string> = {
+  pdf: 'PDF',
+  docx: 'Word',
+  xlsx: 'Excel',
+  csv: 'CSV',
+  txt: 'Text',
+  paste: 'Pasted text',
+};
+const PASTE_WORDS = 500;
+const wordCount = (t: string) => (t.trim() ? t.trim().split(/\s+/).length : 0);
+
+function AttachmentChip({
+  file,
+  onRemove,
+  inverted,
+}: {
+  file: AgentAttachment;
+  onRemove?: () => void;
+  inverted?: boolean;
+}) {
+  const Icon = file.kind === 'xlsx' || file.kind === 'csv' ? FileSpreadsheet : FileText;
+  return (
+    <div
+      className={cn(
+        'flex max-w-full min-w-0 items-center gap-2.5 rounded-xl border px-3 py-2 text-left',
+        inverted ? 'border-white/25 bg-white/15 text-white' : 'border-line bg-card text-ink',
+      )}
+    >
+      <span
+        className={cn(
+          'flex size-8 shrink-0 items-center justify-center rounded-lg',
+          inverted ? 'bg-white/20' : 'bg-primary-soft text-primary',
+        )}
+      >
+        <Icon className="size-4" />
+      </span>
+      <span className="min-w-0">
+        <span className="block truncate text-[13px] font-semibold">{file.name}</span>
+        <span className={cn('block text-[11.5px]', inverted ? 'text-white/80' : 'text-muted')}>
+          {KIND_LABEL[file.kind]} · {file.words.toLocaleString()} words{file.truncated ? ' · first part' : ''}
+        </span>
+      </span>
+      {onRemove && (
+        <button
+          type="button"
+          onClick={onRemove}
+          aria-label={`Remove ${file.name}`}
+          className="text-muted hover:text-ink ml-1 cursor-pointer rounded-md p-1"
+        >
+          <X className="size-3.5" />
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -202,7 +260,42 @@ export function ChatPanel({ scope, compact = false }: { scope: Scope; compact?: 
     enabled: Boolean(activeId),
   });
   const [text, setText] = useState('');
-  const [live, setLive] = useState<{ question: string; steps: string[]; actions: AgentAction[] } | null>(null);
+  const [live, setLive] = useState<{
+    question: string;
+    files: AgentAttachment[];
+    steps: string[];
+    actions: AgentAction[];
+  } | null>(null);
+  const [pending, setPending] = useState<AgentAttachment[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const attach = async (make: () => Promise<AgentAttachment>) => {
+    if (pending.length >= 5) {
+      toast.error('You can attach up to 5 files to one message.');
+      return;
+    }
+    setUploading(true);
+    try {
+      const a = await make();
+      setPending((p) => [...p, a]);
+    } catch (e) {
+      toast.error(errorMessage(e, 'The file could not be attached.'));
+    } finally {
+      setUploading(false);
+    }
+  };
+  const attachFile = (file: File) => {
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('The file is larger than 10 MB.');
+      return;
+    }
+    const fd = new FormData();
+    fd.append('file', file);
+    void attach(() => post<AgentAttachment>(`${base(scope)}/attachments`, fd));
+  };
+  const attachText = (t: string) =>
+    void attach(() => post<AgentAttachment>(`${base(scope)}/attachments/text`, { text: t }));
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -219,8 +312,10 @@ export function ChatPanel({ scope, compact = false }: { scope: Scope; compact?: 
 
   const send = async (message: string) => {
     const q = message.trim();
-    if (!q || live) return;
+    if ((!q && !pending.length) || live || uploading) return;
+    const files = pending;
     setText('');
+    setPending([]);
     let id = activeId;
     try {
       if (!id) {
@@ -232,12 +327,17 @@ export function ChatPanel({ scope, compact = false }: { scope: Scope; compact?: 
       toast.error(errorMessage(e));
       return;
     }
-    setLive({ question: q, steps: [], actions: [] });
-    await streamMessage(`${base(scope)}/conversations/${id}/messages`, q, (e) => {
-      if (e.type === 'tool') setLive((l) => (l ? { ...l, steps: [...l.steps, e.label] } : l));
-      if (e.type === 'action') setLive((l) => (l ? { ...l, actions: [...l.actions, e.action] } : l));
-      if (e.type === 'error') toast.error(e.message);
-    }).catch(() => toast.error('The connection was interrupted.'));
+    setLive({ question: q, files, steps: [], actions: [] });
+    await streamMessage(
+      `${base(scope)}/conversations/${id}/messages`,
+      q,
+      (e) => {
+        if (e.type === 'tool') setLive((l) => (l ? { ...l, steps: [...l.steps, e.label] } : l));
+        if (e.type === 'action') setLive((l) => (l ? { ...l, actions: [...l.actions, e.action] } : l));
+        if (e.type === 'error') toast.error(e.message);
+      },
+      files.map((f) => f._id),
+    ).catch(() => toast.error('The connection was interrupted.'));
     await qc.invalidateQueries({ queryKey: ['mitra', scope, 'conversation', id] });
     await qc.invalidateQueries({ queryKey: ['mitra', scope, 'conversations'] });
     await qc.invalidateQueries({ queryKey: ['mitra', scope, 'status'] });
@@ -553,6 +653,13 @@ export function ChatPanel({ scope, compact = false }: { scope: Scope; compact?: 
               m.role === 'user' ? (
                 <div key={m._id} className="flex justify-end gap-3">
                   <div className="bg-primary max-w-[78%] rounded-2xl rounded-tr-md px-4 py-3 text-[15px] leading-6 whitespace-pre-wrap text-white shadow-[0_8px_22px_var(--ring)] sm:max-w-[72%]">
+                    {!!m.attachments?.length && (
+                      <div className={cn('flex flex-wrap gap-2', m.content && 'mb-2')}>
+                        {m.attachments.map((a) => (
+                          <AttachmentChip key={a._id} file={a} inverted />
+                        ))}
+                      </div>
+                    )}
                     {m.content}
                   </div>
                   {user && (
@@ -593,9 +700,16 @@ export function ChatPanel({ scope, compact = false }: { scope: Scope; compact?: 
           <AnimatePresence>
             {live && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3">
-                {!messages.some((m) => m.content === live.question) && (
+                {!messages.some((m) => m.content === live.question && !live.files.length) && (
                   <div className="flex justify-end">
                     <div className="bg-primary max-w-[78%] rounded-2xl rounded-tr-md px-4 py-3 text-[15px] leading-6 whitespace-pre-wrap text-white shadow-[0_8px_22px_var(--ring)]">
+                      {!!live.files.length && (
+                        <div className={cn('flex flex-wrap gap-2', live.question && 'mb-2')}>
+                          {live.files.map((a) => (
+                            <AttachmentChip key={a._id} file={a} inverted />
+                          ))}
+                        </div>
+                      )}
                       {live.question}
                     </div>
                   </div>
@@ -630,40 +744,89 @@ export function ChatPanel({ scope, compact = false }: { scope: Scope; compact?: 
         </div>
 
         <form
-          className="border-line flex items-end gap-2 border-t p-3 sm:p-4"
+          className="border-line border-t p-3 sm:p-4"
           onSubmit={(e) => {
             e.preventDefault();
             void send(text);
           }}
         >
-          <label htmlFor={`mitra-input-${scope}${compact ? '-c' : ''}`} className="sr-only">
-            Message to {name}
-          </label>
-          <textarea
-            id={`mitra-input-${scope}${compact ? '-c' : ''}`}
-            value={text}
-            rows={1}
-            maxLength={2000}
-            disabled={!s?.available}
-            placeholder={`Ask ${name} anything about ${scope === 'platform' ? 'the platform' : 'your admissions'}…`}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                void send(text);
-              }
-            }}
-            className="elegant-scrollbar border-line bg-card text-ink placeholder:text-muted focus:border-primary max-h-40 min-h-12 flex-1 resize-none rounded-2xl border px-4 py-3 text-[15px] leading-6 outline-none focus:ring-1 focus:ring-[var(--ring)]"
-          />
-          <Button
-            type="submit"
-            size="icon"
-            aria-label="Send"
-            disabled={!text.trim() || Boolean(live) || !s?.available}
-            loading={Boolean(live)}
-          >
-            <Send className="size-4" />
-          </Button>
+          {(pending.length > 0 || uploading) && (
+            <div className="mb-2 flex flex-wrap gap-2">
+              {pending.map((a) => (
+                <AttachmentChip
+                  key={a._id}
+                  file={a}
+                  onRemove={() => setPending((p) => p.filter((x) => x._id !== a._id))}
+                />
+              ))}
+              {uploading && (
+                <span className="text-muted flex items-center gap-2 px-2 text-[12.5px]">
+                  <Loader2 className="text-primary size-3.5 animate-spin" /> Reading the file…
+                </span>
+              )}
+            </div>
+          )}
+          <div className="flex items-end gap-2">
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".pdf,.docx,.xlsx,.csv,.txt,.md"
+              className="hidden"
+              aria-hidden="true"
+              tabIndex={-1}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) attachFile(f);
+                e.target.value = '';
+              }}
+            />
+            <Button
+              type="button"
+              size="icon"
+              variant="secondary"
+              aria-label="Attach a file"
+              title="Attach a PDF, Word, Excel, CSV or text file"
+              disabled={!s?.available || uploading || Boolean(live)}
+              onClick={() => fileRef.current?.click()}
+            >
+              <Paperclip className="size-4" />
+            </Button>
+            <label htmlFor={`mitra-input-${scope}${compact ? '-c' : ''}`} className="sr-only">
+              Message to {name}
+            </label>
+            <textarea
+              id={`mitra-input-${scope}${compact ? '-c' : ''}`}
+              value={text}
+              rows={1}
+              maxLength={2000}
+              disabled={!s?.available}
+              placeholder={`Ask ${name} anything about ${scope === 'platform' ? 'the platform' : 'your admissions'}…`}
+              onChange={(e) => setText(e.target.value)}
+              onPaste={(e) => {
+                const pasted = e.clipboardData.getData('text/plain');
+                if (wordCount(pasted) >= PASTE_WORDS) {
+                  e.preventDefault();
+                  attachText(pasted);
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  void send(text);
+                }
+              }}
+              className="elegant-scrollbar border-line bg-card text-ink placeholder:text-muted focus:border-primary max-h-40 min-h-12 flex-1 resize-none rounded-2xl border px-4 py-3 text-[15px] leading-6 outline-none focus:ring-1 focus:ring-[var(--ring)]"
+            />
+            <Button
+              type="submit"
+              size="icon"
+              aria-label="Send"
+              disabled={(!text.trim() && !pending.length) || Boolean(live) || uploading || !s?.available}
+              loading={Boolean(live)}
+            >
+              <Send className="size-4" />
+            </Button>
+          </div>
         </form>
       </section>
     </div>

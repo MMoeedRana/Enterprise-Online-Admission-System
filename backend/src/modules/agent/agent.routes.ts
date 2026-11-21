@@ -7,6 +7,8 @@ import { brand } from '../../lib/brand';
 import { ApiError, created, ok } from '../../lib/http';
 import { pageMeta, paginationQuery } from '../../lib/pagination';
 import { fileStore } from '../../lib/file-store';
+import { upload } from '../../lib/storage';
+import { extractFile, MAX_PER_MESSAGE, nameFromText, saveAttachment } from './attachments';
 import { idParams, parse } from '../../lib/validate';
 import { authenticate, requireSuperAdmin } from '../../middleware/auth';
 import { requirePermission } from '../../middleware/tenant';
@@ -112,6 +114,10 @@ function agentRouter(scope: AgentScope) {
           role: m.role,
           content: m.content,
           actionId: m.actionId,
+          attachments: (
+            (m as { attachments?: { id: unknown; name: string; kind: string; words: number }[] })
+              .attachments ?? []
+          ).map((a) => ({ _id: String(a.id), name: a.name, kind: a.kind, words: a.words })),
           files: ((m as { fileIds?: Types.ObjectId[] }).fileIds ?? [])
             .map((id) => files.get(String(id)))
             .filter(Boolean),
@@ -134,14 +140,22 @@ function agentRouter(scope: AgentScope) {
 
   r.post('/conversations/:id/messages', async (req: Request, res: Response) => {
     const { id } = parse(idParams, req.params);
-    const { message } = parse(
-      z.object({ message: z.string().trim().min(1, 'Write a message.').max(2000) }),
+    const { message, attachmentIds } = parse(
+      z
+        .object({
+          message: z.string().trim().max(2000).default(''),
+          attachmentIds: z.array(z.string()).max(MAX_PER_MESSAGE).default([]),
+        })
+        .refine((v) => v.message || v.attachmentIds.length, {
+          message: 'Write a message.',
+          path: ['message'],
+        }),
       req.body,
     );
     const ctx = await contextFor(req, scope);
     if (!req.headers.accept?.includes('text/event-stream')) {
       const events: AgentEvent[] = [];
-      const last = await runTurn(ctx, id, message, (e) => events.push(e));
+      const last = await runTurn(ctx, id, message, (e) => events.push(e), attachmentIds);
       return ok(res, { message: last, events });
     }
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
@@ -152,12 +166,37 @@ function agentRouter(scope: AgentScope) {
     const send = (e: AgentEvent | { type: 'done' }) =>
       res.write(`event: ${e.type}\ndata: ${JSON.stringify(e)}\n\n`);
     try {
-      await runTurn(ctx, id, message, send);
+      await runTurn(ctx, id, message, send, attachmentIds);
     } catch (err) {
       send({ type: 'error', message: err instanceof ApiError ? err.message : 'Something went wrong.' });
     }
     send({ type: 'done' });
     res.end();
+  });
+
+  r.post('/attachments', upload.single('file'), async (req, res) => {
+    await contextFor(req, scope);
+    created(res, await saveAttachment(own(req), await extractFile(req.file)));
+  });
+
+  r.post('/attachments/text', async (req, res) => {
+    await contextFor(req, scope);
+    const { text, name } = parse(
+      z.object({
+        text: z.string().trim().min(1, 'Paste some text.').max(200_000),
+        name: z.string().trim().max(80).optional(),
+      }),
+      req.body,
+    );
+    created(
+      res,
+      await saveAttachment(own(req), {
+        kind: 'paste',
+        name: name || nameFromText(text),
+        size: Buffer.byteLength(text),
+        text,
+      }),
+    );
   });
 
   r.get('/exports/:id', async (req, res) => {

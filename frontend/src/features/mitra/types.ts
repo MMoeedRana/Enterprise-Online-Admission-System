@@ -30,12 +30,20 @@ export interface AgentFile {
   format: 'xlsx' | 'pdf' | 'csv';
   rows: number;
 }
+export interface AgentAttachment {
+  _id: string;
+  name: string;
+  kind: 'pdf' | 'docx' | 'xlsx' | 'csv' | 'txt' | 'paste';
+  words: number;
+  truncated?: boolean;
+}
 export interface ChatMessage {
   _id: string;
   role: 'user' | 'assistant';
   content: string;
   actionId?: string | null;
   files?: AgentFile[];
+  attachments?: AgentAttachment[];
   createdAt?: string;
 }
 export interface Conversation {

@@ -20,6 +20,8 @@ const messageSchema = new Schema(
     name: { type: String, default: '' },
     actionId: { type: Types.ObjectId, default: null },
     fileIds: [{ type: Types.ObjectId }],
+    attachments: [{ _id: false, id: Types.ObjectId, name: String, kind: String, words: Number }],
+    context: { type: String, default: '' },
   },
   { _id: true, timestamps: { createdAt: true, updatedAt: false } },
 );
@@ -122,3 +124,20 @@ const exportSchema = new Schema(
 );
 
 export const AgentExportModel = model('AgentExport', exportSchema);
+
+const attachmentSchema = new Schema(
+  {
+    userId: { type: Types.ObjectId, ref: 'User', required: true, index: true },
+    scope: { type: String, enum: AGENT_SCOPES, required: true },
+    institutionId: { type: Types.ObjectId, ref: 'Institution', default: null },
+    name: { type: String, required: true },
+    kind: { type: String, enum: ['pdf', 'docx', 'xlsx', 'csv', 'txt', 'paste'], required: true },
+    size: { type: Number, default: 0 },
+    words: { type: Number, default: 0 },
+    truncated: { type: Boolean, default: false },
+    text: { type: String, required: true },
+  },
+  { timestamps: true },
+);
+
+export const AgentAttachmentModel = model('AgentAttachment', attachmentSchema);

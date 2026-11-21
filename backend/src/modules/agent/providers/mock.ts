@@ -153,6 +153,16 @@ export class MockProvider implements ChatProvider {
       };
     }
     const q = last.role === 'user' ? last.content : '';
+    const attached = [
+      ...q.matchAll(/\[Attached ([^:]+): "([^"]+)", (\d+) words[^\]]*\]\n<<<\n([\s\S]*?)\n>>>/g),
+    ];
+    if (attached.length) {
+      const parts = attached.map((m) => {
+        const preview = m[4]!.split(/\s+/).slice(0, 40).join(' ');
+        return `I read **${m[2]}** (${m[1]}, ${m[3]} words). It begins: "${preview}…"`;
+      });
+      return { content: parts.join('\n\n'), toolCalls: [], usage };
+    }
     const chat = smallTalk(q, userName, agent);
     if (chat) return { content: chat, toolCalls: [], usage };
     const allowed = new Set(req.tools.map((t) => t.name));

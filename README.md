@@ -107,7 +107,7 @@ Open <http://localhost:3000>. Requests to `/api/v1` are forwarded to the backend
 
 ## 5. Mitra, the AI copilot (Phase 5)
 
-Mitra uses the AI provider set in `ADMITRA/backend/.env`. Only these values change when you move to
+Mitra uses the AI provider set in `backend/.env`. Only these values change when you move to
 another provider:
 
 ```
@@ -126,6 +126,11 @@ AI_MODEL=gemini-2.5-flash
 
 Restart the API after changing `.env`. Without a key everything else keeps working; the daily briefings
 and integrity alerts are built from the database, and Mitra explains how to connect a provider.
+Mitra can also read material you give it: attach a PDF, Word (.docx), Excel (.xlsx), CSV or text file with
+the paperclip button (up to 10 MB, five files per message), or paste a long text. A pasted text of 500 words
+or more becomes an attachment named after its first two words instead of filling the message box. Ask Mitra
+to explain, summarize or work from it. Ask it to "export" or "make a list" and it creates an Excel, PDF or CSV
+file from the live data, shown in the chat with a Download button. Every answer has a Copy button.
 `AI_DAILY_LIMIT` (messages per person and day, default 200) and `AI_BRIEFING_HOUR` (Pakistan time,
 default 8) are optional. The free Gemini tier may use requests to improve Google's products, so use a
 paid key for real student data.
@@ -133,7 +138,7 @@ paid key for real student data.
 ## 6. File storage (local folder, Amazon S3 or Cloudflare R2)
 
 Uploaded documents (result cards, fee slips, payment proofs), logos, favicons and profile pictures are
-kept by a storage driver chosen in `ADMITRA/backend/.env`. The application works the same with every
+kept by a storage driver chosen in `backend/.env`. The application works the same with every
 driver: files are always served through the API after the permission check, so the bucket stays private.
 
 | STORAGE_DRIVER | Where files are kept | What is needed |
