@@ -8,6 +8,7 @@ import { FraudFlagModel, VerificationModel } from '../records/record.models';
 import { ProgramModel } from '../programs/program.model';
 import { MemberModel } from '../staff/member.model';
 import { IntegrityAlertModel } from './agent.models';
+import { indexBy } from '../../lib/index-by';
 
 export interface Finding {
   key: string;
@@ -117,12 +118,13 @@ export async function runIntegrityRules(
   const vouchers = await VoucherModel.find({ _id: { $in: verified.map((p) => p.voucherId) } })
     .select('amount voucherNumber')
     .lean();
+  const voucherOf = indexBy(vouchers, (x) => x._id);
   const short = verified.filter((p) => {
-    const v = vouchers.find((x) => String(x._id) === String(p.voucherId));
+    const v = voucherOf.get(String(p.voucherId));
     return v && p.amount < v.amount;
   });
   for (const p of short) {
-    const v = vouchers.find((x) => String(x._id) === String(p.voucherId))!;
+    const v = voucherOf.get(String(p.voucherId))!;
     add({
       code: 'PAYMENT_BELOW_CHALLAN',
       severity: 'HIGH',

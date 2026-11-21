@@ -36,6 +36,7 @@ import {
   MeritListModel,
   OfferModel,
 } from './merit.models';
+import { indexBy } from '../../lib/index-by';
 
 export const SEAT_HOLDING = ['OFFERED', 'ACCEPTED', 'ENROLLED'] as const;
 
@@ -152,8 +153,9 @@ export async function buildList(
   })[] = [];
 
   const needed = new Set<string>();
+  const profileOf = indexBy(profiles, (p) => p.userId);
   for (const app of apps) {
-    const prof = profiles.find((p) => String(p.userId) === String(app.applicantId));
+    const prof = profileOf.get(String(app.applicantId));
     const name = prof?.fullName ?? (app.snapshot?.profile as { fullName?: string } | null)?.fullName ?? '';
     const base = { applicationId: app._id, applicationNumber: app.applicationNumber ?? '', name };
     if (IN_PROGRESS.includes(app.status as ApplicationStatus)) {
@@ -526,8 +528,9 @@ export async function publishList(req: Request, listId: Id) {
     const allowed = list.supersedesId
       ? ['VERIFIED', 'WAITLISTED', 'NOT_SELECTED', 'OFFER_ISSUED']
       : ['VERIFIED', 'WAITLISTED', 'NOT_SELECTED'];
+    const appOf = indexBy(apps, (a) => a._id);
     for (const e of entries) {
-      const app = apps.find((a) => String(a._id) === String(e.applicationId)) as AppDoc | undefined;
+      const app = appOf.get(String(e.applicationId)) as AppDoc | undefined;
       if (!app || !allowed.includes(app.status))
         throw ApiError.conflict(
           `Application ${e.applicationNumber} changed after generation. Generate the list again.`,
@@ -579,8 +582,9 @@ export async function publishList(req: Request, listId: Id) {
     .select('title')
     .lean();
   const inst = await InstitutionModel.findById(t.institutionId).select('name').lean();
+  const userOf = indexBy(users, (x) => x._id);
   for (const e of result.entries) {
-    const u = users.find((x) => String(x._id) === String(e.applicantId));
+    const u = userOf.get(String(e.applicantId));
     if (!u) continue;
     const programName = programs.find((p) => String(p._id) === String(e.programId))?.title ?? '';
     const vars = {

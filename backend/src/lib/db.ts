@@ -4,7 +4,13 @@ import { logger } from './logger';
 mongoose.set('strictQuery', true);
 
 export async function connectDatabase(uri: string): Promise<void> {
-  await mongoose.connect(uri, { serverSelectionTimeoutMS: 10000 });
+  await mongoose.connect(uri, {
+    serverSelectionTimeoutMS: 10000,
+    maxPoolSize: 50,
+    minPoolSize: 2,
+    maxIdleTimeMS: 60000,
+    socketTimeoutMS: 60000,
+  });
   const hello = await mongoose.connection.db!.admin().command({ hello: 1 });
   if (!hello.setName) {
     await mongoose.disconnect();
@@ -14,7 +20,7 @@ export async function connectDatabase(uri: string): Promise<void> {
         '  1. In mongod.cfg add:  replication:  replSetName: rs0   and restart the MongoDB service.',
         "  2. In mongosh run once:  rs.initiate({ _id: 'rs0', members: [{ _id: 0, host: '127.0.0.1:27017' }] })",
         '  3. In backend/.env use:  MONGODB_URI=mongodb://127.0.0.1:27017/admitra?replicaSet=rs0',
-        '  See section 2 of ADMITRA/README.md.',
+        '  See section 2 of README.md.',
       ].join('\n'),
     );
   }

@@ -17,6 +17,7 @@ import { MeritEntryModel, MeritListModel } from '../merit/merit.models';
 import { ProgramModel } from '../programs/program.model';
 import { RecordModel } from '../records/record.models';
 import { institutionAnalytics } from './analytics.service';
+import { indexBy } from '../../lib/index-by';
 
 export const analyticsRouter = Router();
 analyticsRouter.use(requirePermission(PERMISSIONS.ANALYTICS_VIEW));
@@ -83,6 +84,7 @@ async function applicationRows(req: Request) {
       .lean(),
   ]);
   const title = q.campaignId ? campaigns.find((c) => String(c._id) === q.campaignId)?.title : undefined;
+  const voucherOf = indexBy(vouchers, (x) => x.applicationId);
   return {
     title,
     items: apps.map((a) => {
@@ -93,7 +95,7 @@ async function applicationRows(req: Request) {
           const pr = programs.find((g) => String(g._id) === String(x.programId));
           return `${pr?.code ?? ''} (${x.shift.toLowerCase()})`;
         });
-      const v = vouchers.find((x) => String(x.applicationId) === String(a._id));
+      const v = voucherOf.get(String(a._id));
       return {
         applicationNumber: a.applicationNumber ?? '',
         name: p.fullName ?? '',
@@ -286,6 +288,7 @@ async function meritRows(req: Request) {
   const apps = await ApplicationModel.find({ _id: { $in: entries.map((e) => e.applicationId) } })
     .select('snapshot.profile.fullName')
     .lean();
+  const appOf = indexBy(apps, (a) => a._id);
   const pool = (e: (typeof entries)[number]) =>
     list.pools.find((p) => String(p.programId) === String(e.programId) && p.shift === e.shift);
   return {
@@ -298,7 +301,7 @@ async function meritRows(req: Request) {
       applicationNumber: e.applicationNumber,
       name:
         (
-          apps.find((a) => String(a._id) === String(e.applicationId))?.snapshot?.profile as {
+          appOf.get(String(e.applicationId))?.snapshot?.profile as {
             fullName?: string;
           }
         )?.fullName ?? e.shortName,

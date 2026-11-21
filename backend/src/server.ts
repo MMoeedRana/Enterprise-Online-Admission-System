@@ -8,6 +8,14 @@ import { closeExpiredCampaigns, startCampaignJobs } from './jobs/campaigns.job';
 import { brand, loadBrand } from './lib/brand';
 import { startBriefingJob } from './modules/agent/briefing.service';
 
+process.on('unhandledRejection', (err) => {
+  logger.error({ err }, 'Unhandled promise rejection');
+});
+process.on('uncaughtException', (err) => {
+  logger.fatal({ err }, 'Uncaught exception, shutting down');
+  process.exit(1);
+});
+
 async function main() {
   assertProductionSafety();
   await connectDatabase(env.MONGODB_URI);

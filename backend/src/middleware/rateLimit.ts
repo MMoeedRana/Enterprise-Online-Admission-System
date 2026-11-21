@@ -1,4 +1,5 @@
-import rateLimit from 'express-rate-limit';
+import { createHash } from 'node:crypto';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { isTest } from '../config/env';
 
 const message = {
@@ -27,5 +28,19 @@ export const statusLookupLimiter = rateLimit({
   limit: isTest ? 1000 : 20,
   standardHeaders: 'draft-8',
   legacyHeaders: false,
+  message,
+});
+
+export const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: isTest ? 100000 : 600,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  skip: (req) => req.path === '/health',
+  keyGenerator: (req) => {
+    const auth = req.headers.authorization;
+    if (auth) return 'u:' + createHash('sha256').update(auth).digest('base64url').slice(0, 24);
+    return 'ip:' + ipKeyGenerator(req.ip ?? '');
+  },
   message,
 });

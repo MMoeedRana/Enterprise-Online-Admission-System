@@ -105,6 +105,29 @@ npm run dev
 
 Open <http://localhost:3000>. Requests to `/api/v1` are forwarded to the backend.
 
+### Fast mode (production build)
+
+`npm run dev` compiles every page the first time it is opened, so the first visit to each page is slow
+(several seconds on Windows). For a demonstration or real use, run the production build, where every page
+is compiled in advance and opens in about a tenth of a second:
+
+```bash
+cd backend
+npm run build
+npm start
+```
+
+```bash
+cd frontend
+npm run build
+npm start
+```
+
+Run `npm run build` again after changing the code. API responses are compressed, every database query
+stops after 30 seconds instead of holding the database, each signed-in session may send up to 600 requests
+a minute, lists are paged (at most 100 rows) and exports are capped at 20,000 rows, so a large amount of data
+or a burst of requests slows nothing else down and does not crash the server.
+
 ## 5. Mitra, the AI copilot (Phase 5)
 
 Mitra uses the AI provider set in `backend/.env`. Only these values change when you move to
